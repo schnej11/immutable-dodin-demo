@@ -17,6 +17,7 @@
     "dotenv": "^17.4.2",
     "ecpair": "^3.0.1",
     "express": "^5.2.1",
+    "lucide-react": "^1.21.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "tiny-secp256k1": "^2.2.4"

@@ -1,17 +1,49 @@
 import { useState, useEffect, useRef } from "react";
+import {
+  Camera, Anchor, Search, Radio, Download,
+  Pause, Play, AlertTriangle, ChevronDown, ChevronUp,
+  Activity, ShieldCheck, ShieldAlert, Cpu, Globe,
+  RefreshCw, RotateCcw, CheckCircle2,
+} from "lucide-react";
 
-// ── Color palette ─────────────────────────────────────────────────────────────
+// ── VX dark-theme color tokens ────────────────────────────────────────────────
 const C = {
-  bg: "#080c14", surf: "#0d1220", surf2: "#111929", surf3: "#162030",
-  border: "#1b2a3f", borderHi: "#253d58", text: "#c8d8e8", dim: "#5a7a96",
-  muted: "#243040",
-  green: "#2ecc71", greenBg: "#051510", greenBd: "#0a3520",
-  red: "#e74c3c", redBg: "#180808", redBd: "#4d1515",
-  amber: "#f39c12", amberBg: "#180e00", amberBd: "#5a3800",
-  blue: "#3498db", blueBg: "#071020", blueBd: "#0e2e50",
-  cyan: "#1abc9c", cyanBg: "#051a15", cyanBd: "#0a3028",
-  violet: "#9b59b6", violetBg: "#0e0620", violetBd: "#3b1f5a",
-  mono: "'Courier New', Consolas, 'Lucida Console', monospace",
+  // Surfaces — Cod Grey base (never pure black)
+  bg:       "#1E1E1E",
+  surf:     "#282828",
+  surf2:    "#141414",
+  surf3:    "#2A2A2A",
+  border:   "#2A2A2A",
+  borderHi: "#434343",
+  // Typography — Wild Sand / Silver / Boulder
+  text:     "#F5F5F5",
+  dim:      "#BEBEBE",
+  muted:    "#757575",
+  // VX accent — Philippine Yellow (primary interactive on dark)
+  yellow:   "#FFCB03",
+  yellowBg: "#1C1600",
+  yellowBd: "#4A3A00",
+  // Status signals (operational meaning — distinct from accent)
+  green:    "#22C55E",
+  greenBg:  "#0A1A0E",
+  greenBd:  "#1A4020",
+  red:      "#EF4444",
+  redBg:    "#1C0707",
+  redBd:    "#4A1212",
+  amber:    "#F59E0B",
+  amberBg:  "#1C1100",
+  amberBd:  "#5A3800",
+  teal:     "#14B8A6",
+  tealBg:   "#061512",
+  tealBd:   "#0A3028",
+  violet:   "#A78BFA",
+  violetBg: "#0E0820",
+  violetBd: "#3B1F70",
+  // Typography stacks
+  fontBody:      "'Inter Tight', 'Helvetica Neue', Arial, sans-serif",
+  fontTactical:  "'Chakra Petch', 'Inter Tight', sans-serif",
+  fontCondensed: "'IBM Plex Sans Condensed', 'Inter Tight', sans-serif",
+  fontMono:      "'Chakra Petch', ui-monospace, SFMono-Regular, Menlo, monospace",
 };
 
 // ── Static hierarchy ──────────────────────────────────────────────────────────
@@ -62,11 +94,11 @@ function downloadJson(data, filename) {
 
 // ── Event generators ──────────────────────────────────────────────────────────
 const EVENT_TYPES = [
-  { type: "FILE_SAVE",    icon: "💾", label: "File saved"      },
-  { type: "AI_PROMPT",   icon: "🤖", label: "AI prompt exec"  },
-  { type: "FILE_MODIFY", icon: "✏️", label: "File modified"   },
-  { type: "LOGIN_CAC",   icon: "🔐", label: "CAC login"       },
-  { type: "NET_CONNECT", icon: "🌐", label: "Network connect" },
+  { type: "FILE_SAVE",    label: "File saved"      },
+  { type: "AI_PROMPT",   label: "AI prompt exec"  },
+  { type: "FILE_MODIFY", label: "File modified"   },
+  { type: "LOGIN_CAC",   label: "CAC login"       },
+  { type: "NET_CONNECT", label: "Network connect" },
 ];
 const FILES = [
   "logistics_manifest_v3.docx","unit_deploy_order.xlsx","supply_chain_data.csv",
@@ -79,7 +111,7 @@ function genEvent(id) {
   const file = FILES[Math.floor(Math.random() * FILES.length)];
   const base = ENDPOINT_BASE[ep];
   return {
-    id, timestamp: Date.now(), type: et.type, icon: et.icon, label: et.label,
+    id, timestamp: Date.now(), type: et.type, label: et.label,
     endpoint: ep, base, region: BASE_REGION[base], file,
     user: "GS" + (Math.floor(Math.random() * 5) + 9) + "-" + Math.floor(1000 + Math.random() * 9000),
     payload: `${et.type}::${ep}::${file}::${Date.now()}::${Math.random()}`,
@@ -105,15 +137,48 @@ function fmtTime(ts) {
   return new Date(ts).toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
-// ── Snapshot bundle status helpers ────────────────────────────────────────────
+// ── Status metadata ───────────────────────────────────────────────────────────
 const STATUS_META = {
-  pending:              { color: C.amber,  bg: C.amberBg,  bd: C.amberBd,  label: "PENDING"               },
-  anchoring:            { color: C.dim,    bg: C.surf2,    bd: C.border,   label: "ANCHORING…"            },
-  pending_confirmation: { color: C.amber,  bg: C.amberBg,  bd: C.amberBd,  label: "PENDING CONFIRMATION"  },
-  verifying:            { color: C.dim,    bg: C.surf2,    bd: C.border,   label: "VERIFYING…"            },
-  blockchain_confirmed: { color: C.green,  bg: C.greenBg,  bd: C.greenBd,  label: "✅ BLOCKCHAIN CONFIRMED"},
-  demo_confirmed:       { color: C.cyan,   bg: C.cyanBg,   bd: C.cyanBd,   label: "DEMO CONFIRMED"        },
-  transmitted:          { color: C.violet, bg: C.violetBg, bd: C.violetBd, label: "📡 TRANSMITTED"        },
+  pending:              { color: C.amber,  bg: C.amberBg,  bd: C.amberBd,  label: "PENDING"              },
+  anchoring:            { color: C.muted,  bg: C.surf2,    bd: C.border,   label: "ANCHORING"            },
+  pending_confirmation: { color: C.amber,  bg: C.amberBg,  bd: C.amberBd,  label: "PENDING CONFIRMATION" },
+  verifying:            { color: C.muted,  bg: C.surf2,    bd: C.border,   label: "VERIFYING"            },
+  blockchain_confirmed: { color: C.green,  bg: C.greenBg,  bd: C.greenBd,  label: "BLOCKCHAIN CONFIRMED" },
+  demo_confirmed:       { color: C.teal,   bg: C.tealBg,   bd: C.tealBd,   label: "DEMO CONFIRMED"       },
+  transmitted:          { color: C.violet, bg: C.violetBg, bd: C.violetBd, label: "TRANSMITTED"          },
+};
+
+// ── Shared style helpers ──────────────────────────────────────────────────────
+function btnPrimary(disabled) {
+  return {
+    display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+    width: "100%", padding: "8px 0", borderRadius: 4, cursor: disabled ? "not-allowed" : "pointer",
+    border: `1px solid ${disabled ? C.border : C.yellowBd}`,
+    background: disabled ? C.surf2 : C.yellowBg,
+    color: disabled ? C.muted : C.yellow,
+    fontFamily: C.fontTactical, fontSize: 12, fontWeight: 600, letterSpacing: "0.06em",
+    transition: "opacity 200ms cubic-bezier(0.2,0.7,0.2,1)",
+  };
+}
+function btnGhost(color, bg, bd) {
+  return {
+    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+    width: "100%", padding: "6px 0", borderRadius: 4, cursor: "pointer",
+    border: `1px solid ${bd}`, background: bg, color,
+    fontFamily: C.fontTactical, fontSize: 11, fontWeight: 600, letterSpacing: "0.05em",
+    transition: "opacity 200ms cubic-bezier(0.2,0.7,0.2,1)",
+  };
+}
+const eyebrow = {
+  fontFamily: C.fontTactical, fontSize: 10, fontWeight: 600,
+  textTransform: "uppercase", letterSpacing: "0.16em", color: C.muted,
+};
+const panelCard = {
+  background: C.surf, border: `1px solid ${C.border}`, borderRadius: 6, padding: "12px 14px",
+};
+const sectionRule = {
+  borderBottom: `1px solid ${C.border}`, paddingBottom: 8, marginBottom: 12,
+  display: "flex", justifyContent: "space-between", alignItems: "center",
 };
 
 // ── App ────────────────────────────────────────────────────────────────────────
@@ -127,16 +192,12 @@ export default function App() {
   const [globalRoot, setGlobalRoot]       = useState(null);
   const [tamperAlert, setTamperAlert]     = useState(null);
   const [isRunning, setIsRunning]         = useState(true);
-
-  // Bundle workflow state
-  const [snapshots, setSnapshots]               = useState([]);
+  const [snapshots, setSnapshots]         = useState([]);
   const [transmittedBundles, setTransmittedBundles] = useState([]);
-  const [expandedBundles, setExpandedBundles]   = useState(new Set());
-  const [snapshotting, setSnapshotting]         = useState(false);
-
+  const [expandedBundles, setExpandedBundles]       = useState(new Set());
+  const [snapshotting, setSnapshotting]   = useState(false);
   const counterRef = useRef(0);
 
-  // ── Event simulation ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!isRunning) return;
     const t = setInterval(() => {
@@ -145,7 +206,6 @@ export default function App() {
     return () => clearInterval(t);
   }, [isRunning]);
 
-  // ── Merkle tree recomputation ─────────────────────────────────────────────
   useEffect(() => {
     if (!events.length) return;
     (async () => {
@@ -188,7 +248,6 @@ export default function App() {
     })();
   }, [events]);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
   const tamperEvent  = id => { setEvents(p => p.map(e => e.id === id ? { ...e, tampered: true  } : e)); setTamperAlert(null); };
   const restoreEvent = id => { setEvents(p => p.map(e => e.id === id ? { ...e, tampered: false } : e)); setTamperAlert(null); };
 
@@ -276,42 +335,69 @@ export default function App() {
   const hasTamper      = events.some(e => e.tampered);
   const tamperedEvents = events.filter(e => e.tampered);
   const tamperedEps    = new Set(tamperedEvents.map(e => e.endpoint));
+  const confirmedCount = snapshots.filter(s => ["blockchain_confirmed","demo_confirmed","transmitted"].includes(s.status)).length;
 
-  const confirmedSnapshots = snapshots.filter(s => ["blockchain_confirmed","demo_confirmed","transmitted"].includes(s.status)).length;
+  // ── Sub-renders ───────────────────────────────────────────────────────────
 
-  // ── Shared sub-renders ────────────────────────────────────────────────────
+  function StatusBadge({ status }) {
+    const m = STATUS_META[status] || STATUS_META.pending;
+    return (
+      <span style={{ fontFamily: C.fontTactical, fontSize: 9, fontWeight: 600, letterSpacing: "0.1em",
+        color: m.color, background: m.bg, border: `1px solid ${m.bd}`,
+        padding: "2px 8px", borderRadius: 2 }}>
+        {m.label}
+      </span>
+    );
+  }
 
   function renderMerkleHierarchy() {
     return (
-      <div style={{ width: 230, flexShrink: 0, background: C.surf, border: `1px solid ${C.border}`, borderRadius: 6, padding: "12px 13px" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: C.dim, textTransform: "uppercase", borderBottom: `1px solid ${C.border}`, paddingBottom: 7, marginBottom: 12 }}>Merkle Hierarchy</div>
+      <div style={{ ...panelCard, width: 230, flexShrink: 0 }}>
+        <div style={{ ...sectionRule }}>
+          <span style={eyebrow}>Merkle Hierarchy</span>
+        </div>
 
-        <div style={{ marginBottom: 13 }}>
-          <div style={{ fontSize: 10, color: C.dim, letterSpacing: "0.08em", marginBottom: 5, textTransform: "uppercase" }}>Tier 4 — Global Anchor</div>
-          <div style={{ background: globalRoot ? (hasTamper ? C.redBg : C.greenBg) : C.surf2, border: `1px solid ${globalRoot ? (hasTamper ? C.redBd : C.greenBd) : C.border}`, borderRadius: 4, padding: "8px 10px" }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: hasTamper ? C.red : C.green, marginBottom: 5 }}>
-              {hasTamper ? "⚠  INTEGRITY FAIL" : "●  INTEGRITY OK"}
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ ...eyebrow, marginBottom: 6 }}>Tier 4 — Global Anchor</div>
+          <div style={{ background: globalRoot ? (hasTamper ? C.redBg : C.greenBg) : C.surf2,
+            border: `1px solid ${globalRoot ? (hasTamper ? C.redBd : C.greenBd) : C.border}`,
+            borderRadius: 4, padding: "8px 10px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+              {hasTamper
+                ? <ShieldAlert size={13} color={C.red} />
+                : <ShieldCheck size={13} color={C.green} />}
+              <span style={{ fontFamily: C.fontTactical, fontSize: 11, fontWeight: 600,
+                color: hasTamper ? C.red : C.green, letterSpacing: "0.05em" }}>
+                {hasTamper ? "INTEGRITY FAIL" : "INTEGRITY OK"}
+              </span>
             </div>
-            <div style={{ fontFamily: C.mono, fontSize: 7.5, color: hasTamper ? C.red : C.green, wordBreak: "break-all", lineHeight: 1.6 }}>{globalRoot || "—"}</div>
+            <div style={{ fontFamily: C.fontMono, fontSize: 7.5, color: hasTamper ? C.red : C.green,
+              wordBreak: "break-all", lineHeight: 1.6 }}>{globalRoot || "—"}</div>
           </div>
         </div>
 
-        <div style={{ marginBottom: 13 }}>
-          <div style={{ fontSize: 10, color: C.dim, letterSpacing: "0.08em", marginBottom: 5, textTransform: "uppercase" }}>Tier 3 — Regional</div>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ ...eyebrow, marginBottom: 6 }}>Tier 3 — Regional</div>
           {REGIONS.map(reg => (
-            <div key={reg} style={{ background: C.surf2, border: `1px solid ${C.border}`, borderRadius: 4, padding: "5px 8px", marginBottom: 4 }}>
-              <div style={{ fontSize: 11, color: C.blue, fontWeight: 600, marginBottom: 2 }}>{reg}</div>
-              <div style={{ fontFamily: C.mono, fontSize: 7.5, color: C.dim, wordBreak: "break-all", lineHeight: 1.5 }}>{regionRoots[reg] || "—"}</div>
+            <div key={reg} style={{ background: C.surf2, border: `1px solid ${C.border}`,
+              borderRadius: 4, padding: "5px 8px", marginBottom: 4 }}>
+              <div style={{ fontFamily: C.fontTactical, fontSize: 11, color: C.yellow,
+                fontWeight: 600, marginBottom: 2, letterSpacing: "0.04em" }}>{reg}</div>
+              <div style={{ fontFamily: C.fontMono, fontSize: 7.5, color: C.muted,
+                wordBreak: "break-all", lineHeight: 1.5 }}>{regionRoots[reg] || "—"}</div>
             </div>
           ))}
         </div>
 
         <div>
-          <div style={{ fontSize: 10, color: C.dim, letterSpacing: "0.08em", marginBottom: 5, textTransform: "uppercase" }}>Tier 2 — Installations</div>
+          <div style={{ ...eyebrow, marginBottom: 6 }}>Tier 2 — Installations</div>
           {BASES.map(base => (
-            <div key={base} style={{ background: C.surf2, border: `1px solid ${C.border}`, borderRadius: 4, padding: "5px 8px", marginBottom: 4 }}>
-              <div style={{ fontSize: 11, color: C.dim, fontWeight: 600, marginBottom: 2 }}>{base}</div>
-              <div style={{ fontFamily: C.mono, fontSize: 7.5, color: C.muted, wordBreak: "break-all", lineHeight: 1.5 }}>{baseRoots[base] || "—"}</div>
+            <div key={base} style={{ background: C.surf2, border: `1px solid ${C.border}`,
+              borderRadius: 4, padding: "5px 8px", marginBottom: 4 }}>
+              <div style={{ fontFamily: C.fontCondensed, fontSize: 11, color: C.dim,
+                fontWeight: 600, marginBottom: 2 }}>{base}</div>
+              <div style={{ fontFamily: C.fontMono, fontSize: 7.5, color: C.muted,
+                wordBreak: "break-all", lineHeight: 1.5 }}>{baseRoots[base] || "—"}</div>
             </div>
           ))}
         </div>
@@ -321,162 +407,163 @@ export default function App() {
 
   function renderLiveEvents() {
     return (
-      <div style={{ flex: 1, minWidth: 0, background: C.surf, border: `1px solid ${C.border}`, borderRadius: 6, padding: "12px 13px", display: "flex", flexDirection: "column" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: C.dim, textTransform: "uppercase", borderBottom: `1px solid ${C.border}`, paddingBottom: 7, marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
-          <span>Live Events Feed</span>
-          <span style={{ fontFamily: C.mono, color: C.muted }}>{events.length} total</span>
+      <div style={{ ...panelCard, flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+        <div style={{ ...sectionRule }}>
+          <span style={eyebrow}>Live Events Feed</span>
+          <span style={{ fontFamily: C.fontMono, fontSize: 10, color: C.muted }}>{events.length} total</span>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {events.slice(0, 6).map((e, i) => (
-            <div key={e.id} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "5px 7px", borderRadius: 4, background: e.tampered ? C.redBg : C.surf2, border: `1px solid ${e.tampered ? C.redBd : C.border}` }}>
-              <span style={{ fontSize: 13, lineHeight: 1.6, flexShrink: 0 }}>{e.icon}</span>
+            <div key={e.id} style={{ display: "flex", alignItems: "flex-start", gap: 8,
+              padding: "7px 9px", borderRadius: 4,
+              background: e.tampered ? C.redBg : C.surf2,
+              border: `1px solid ${e.tampered ? C.redBd : C.border}` }}>
+              <Activity size={12} color={e.tampered ? C.red : C.muted} style={{ marginTop: 2, flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
-                  <span style={{ fontFamily: C.mono, fontSize: 11, color: C.blue, fontWeight: 700 }}>{e.endpoint}</span>
-                  <span style={{ fontFamily: C.mono, fontSize: 9, color: C.muted, flexShrink: 0 }}>{fmtTime(e.timestamp)}</span>
+                  <span style={{ fontFamily: C.fontTactical, fontSize: 11, color: C.yellow,
+                    fontWeight: 600, letterSpacing: "0.04em" }}>{e.endpoint}</span>
+                  <span style={{ fontFamily: C.fontMono, fontSize: 9, color: C.muted, flexShrink: 0 }}>{fmtTime(e.timestamp)}</span>
                 </div>
-                <div style={{ fontSize: 12, color: e.tampered ? C.red : C.text, marginTop: 1, fontWeight: e.tampered ? 600 : 400 }}>
-                  {e.label}{e.tampered && <span style={{ marginLeft: 5 }}>[TAMPERED]</span>}
+                <div style={{ fontFamily: C.fontBody, fontSize: 12, color: e.tampered ? C.red : C.text,
+                  marginTop: 2, fontWeight: e.tampered ? 600 : 400 }}>
+                  {e.label}{e.tampered && <span style={{ marginLeft: 6, fontFamily: C.fontTactical,
+                    fontSize: 10, letterSpacing: "0.06em" }}>[TAMPERED]</span>}
                 </div>
-                <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, marginTop: 1 }}>{e.file}</div>
-                <div style={{ fontFamily: C.mono, fontSize: 7.5, color: C.muted, marginTop: 2, wordBreak: "break-all", lineHeight: 1.4 }}>{eventHashes[i] || "hashing…"}</div>
+                <div style={{ fontFamily: C.fontCondensed, fontSize: 11, color: C.dim, marginTop: 1 }}>{e.file}</div>
+                <div style={{ fontFamily: C.fontMono, fontSize: 7.5, color: C.muted, marginTop: 3,
+                  wordBreak: "break-all", lineHeight: 1.4 }}>{eventHashes[i] || "hashing..."}</div>
               </div>
               {!e.tampered && (
-                <button onClick={() => tamperEvent(e.id)} style={{ padding: "2px 6px", fontSize: 10, borderRadius: 3, border: `1px solid ${C.redBd}`, background: C.redBg, color: C.red, cursor: "pointer", flexShrink: 0, fontFamily: C.mono, fontWeight: 700 }}>
+                <button onClick={() => tamperEvent(e.id)} style={{ padding: "2px 8px", fontSize: 10,
+                  borderRadius: 4, border: `1px solid ${C.redBd}`, background: C.redBg, color: C.red,
+                  cursor: "pointer", flexShrink: 0, fontFamily: C.fontTactical, fontWeight: 600,
+                  letterSpacing: "0.05em" }}>
                   TAMPER
                 </button>
               )}
             </div>
           ))}
           {!events.length && (
-            <div style={{ textAlign: "center", color: C.dim, fontSize: 12, padding: "40px 0", opacity: 0.6 }}>Waiting for events…</div>
+            <div style={{ textAlign: "center", color: C.muted, fontSize: 12,
+              fontFamily: C.fontBody, padding: "32px 0" }}>Waiting for events</div>
           )}
         </div>
 
-        {/* Snapshot button */}
-        <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
-          <button
-            onClick={handleSnapshot}
-            disabled={!events.length || !globalRoot || snapshotting}
-            style={{
-              width: "100%", padding: "10px 0", borderRadius: 4, fontSize: 14, fontWeight: 700,
-              fontFamily: C.mono, letterSpacing: "0.05em", cursor: events.length && globalRoot && !snapshotting ? "pointer" : "not-allowed",
-              border: `1px solid ${events.length && globalRoot ? C.blue : C.border}`,
-              background: events.length && globalRoot && !snapshotting ? C.blueBg : C.surf2,
-              color: events.length && globalRoot && !snapshotting ? C.blue : C.dim,
-            }}
-          >
-            {snapshotting ? "CAPTURING…" : "📸  SNAPSHOT & QUEUE"}
+        <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
+          <button onClick={handleSnapshot} disabled={!events.length || !globalRoot || snapshotting}
+            style={btnPrimary(!events.length || !globalRoot || snapshotting)}>
+            <Camera size={14} />
+            {snapshotting ? "CAPTURING" : "SNAPSHOT & QUEUE"}
           </button>
-          <div style={{ fontSize: 10, color: C.muted, marginTop: 5, textAlign: "center" }}>
-            Bundles {events.length} events into a signed JSON payload → Pending Queue
+          <div style={{ fontFamily: C.fontBody, fontSize: 11, color: C.muted, marginTop: 6,
+            textAlign: "center", lineHeight: 1.5 }}>
+            Bundles all current events — then clears the feed
           </div>
         </div>
       </div>
     );
   }
 
-  function renderBundleStatusBadge(status) {
-    const m = STATUS_META[status] || STATUS_META.pending;
-    return (
-      <span style={{ fontFamily: C.mono, fontSize: 9, fontWeight: 700, color: m.color, background: m.bg, border: `1px solid ${m.bd}`, padding: "2px 8px", borderRadius: 2, letterSpacing: "0.05em" }}>
-        {m.label}
-      </span>
-    );
-  }
-
   function renderPendingQueue() {
     return (
-      <div style={{ width: 310, flexShrink: 0, background: C.surf, border: `1px solid ${C.border}`, borderRadius: 6, padding: "12px 13px" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: C.dim, textTransform: "uppercase", borderBottom: `1px solid ${C.border}`, paddingBottom: 7, marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span>Pending Queue</span>
-          <span style={{ fontFamily: C.mono, fontSize: 10, color: C.muted }}>{snapshots.length} bundles</span>
+      <div style={{ ...panelCard, width: 310, flexShrink: 0 }}>
+        <div style={{ ...sectionRule }}>
+          <span style={eyebrow}>Pending Queue</span>
+          <span style={{ fontFamily: C.fontMono, fontSize: 10, color: C.muted }}>{snapshots.length} bundles</span>
         </div>
 
-        <div style={{ height: 520, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ maxHeight: 540, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
           {snapshots.length === 0 && (
-            <div style={{ textAlign: "center", color: C.dim, fontSize: 12, padding: "50px 0", opacity: 0.6 }}>
-              No bundles yet<br />
-              <span style={{ fontSize: 10, color: C.muted }}>Click 📸 Snapshot & Queue</span>
+            <div style={{ textAlign: "center", color: C.muted, fontFamily: C.fontBody,
+              fontSize: 12, padding: "48px 0", lineHeight: 1.7 }}>
+              No bundles queued<br />
+              <span style={{ fontSize: 11, color: C.muted, opacity: 0.6 }}>Use Snapshot to create one</span>
             </div>
           )}
           {snapshots.map(bundle => {
             const m = STATUS_META[bundle.status] || STATUS_META.pending;
-            const canAnchor    = bundle.status === "pending";
-            const canVerify    = bundle.status === "pending_confirmation";
-            const canSend      = ["blockchain_confirmed","demo_confirmed"].includes(bundle.status);
-            const isWorking    = ["anchoring","verifying"].includes(bundle.status);
+            const canAnchor = bundle.status === "pending";
+            const canVerify = bundle.status === "pending_confirmation";
+            const canSend   = ["blockchain_confirmed","demo_confirmed"].includes(bundle.status);
+            const isWorking = ["anchoring","verifying"].includes(bundle.status);
             return (
-              <div key={bundle.snapshotId} style={{ background: C.surf2, border: `1px solid ${m.bd}`, borderRadius: 5, padding: "10px 11px" }}>
+              <div key={bundle.snapshotId} style={{ background: C.surf2,
+                border: `1px solid ${m.bd}`, borderRadius: 4, padding: "10px 12px" }}>
 
-                {/* Bundle header */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 7 }}>
-                  {renderBundleStatusBadge(bundle.status)}
-                  <span style={{ fontFamily: C.mono, fontSize: 9, color: C.muted }}>{fmtTime(new Date(bundle.capturedAt).getTime())}</span>
-                </div>
-
-                <div style={{ fontFamily: C.mono, fontSize: 10, color: C.dim, marginBottom: 3 }}>
-                  ID: {bundle.snapshotId.slice(0, 18)}…
-                </div>
-
-                <div style={{ display: "flex", gap: 10, marginBottom: 5 }}>
-                  <span style={{ fontSize: 11, color: C.text }}>{bundle.eventCount} events</span>
-                  <span style={{
-                    fontSize: 10, fontWeight: 700, fontFamily: C.mono,
-                    color: bundle.integrityStatus === "CLEAN" ? C.green : C.red,
-                    background: bundle.integrityStatus === "CLEAN" ? C.greenBg : C.redBg,
-                    border: `1px solid ${bundle.integrityStatus === "CLEAN" ? C.greenBd : C.redBd}`,
-                    padding: "1px 6px", borderRadius: 2,
-                  }}>
-                    {bundle.integrityStatus === "CLEAN" ? "✓ CLEAN" : "⚠ CONTAINS VIOLATIONS"}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                  <StatusBadge status={bundle.status} />
+                  <span style={{ fontFamily: C.fontMono, fontSize: 9, color: C.muted }}>
+                    {fmtTime(new Date(bundle.capturedAt).getTime())}
                   </span>
                 </div>
 
-                <div style={{ fontFamily: C.mono, fontSize: 7.5, color: C.dim, wordBreak: "break-all", lineHeight: 1.5, marginBottom: 6 }}>
+                <div style={{ fontFamily: C.fontMono, fontSize: 9, color: C.muted, marginBottom: 5 }}>
+                  {bundle.snapshotId.slice(0, 20)}...
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontFamily: C.fontCondensed, fontSize: 12, color: C.text }}>
+                    {bundle.eventCount} events
+                  </span>
+                  <span style={{ fontFamily: C.fontTactical, fontSize: 9, fontWeight: 600,
+                    letterSpacing: "0.06em",
+                    color: bundle.integrityStatus === "CLEAN" ? C.green : C.red,
+                    background: bundle.integrityStatus === "CLEAN" ? C.greenBg : C.redBg,
+                    border: `1px solid ${bundle.integrityStatus === "CLEAN" ? C.greenBd : C.redBd}`,
+                    padding: "1px 6px", borderRadius: 2 }}>
+                    {bundle.integrityStatus === "CLEAN" ? "CLEAN" : "VIOLATIONS"}
+                  </span>
+                </div>
+
+                <div style={{ fontFamily: C.fontMono, fontSize: 7.5, color: C.muted,
+                  wordBreak: "break-all", lineHeight: 1.5, marginBottom: 6 }}>
                   root: {bundle.merkleRoot}
                 </div>
 
                 {bundle.txid && (
-                  <div style={{ marginBottom: 6 }}>
-                    <div style={{ fontFamily: C.mono, fontSize: 7.5, color: bundle.isDemo ? C.cyan : C.blue, wordBreak: "break-all", lineHeight: 1.5 }}>
-                      txid: {bundle.txid}
-                      {bundle.isDemo && <span style={{ color: C.muted }}> (demo)</span>}
-                    </div>
+                  <div style={{ fontFamily: C.fontMono, fontSize: 7.5,
+                    color: bundle.isDemo ? C.teal : C.yellow,
+                    wordBreak: "break-all", lineHeight: 1.5, marginBottom: 6 }}>
+                    txid: {bundle.txid}{bundle.isDemo && " (demo)"}
                   </div>
                 )}
 
                 {bundle.verifyNote && (
-                  <div style={{ fontSize: 10, color: C.amber, marginBottom: 5, fontStyle: "italic" }}>{bundle.verifyNote}</div>
+                  <div style={{ fontFamily: C.fontBody, fontSize: 10, color: C.amber,
+                    marginBottom: 6, lineHeight: 1.5 }}>{bundle.verifyNote}</div>
                 )}
 
-                {/* Action buttons */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 7 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
                   {canAnchor && (
-                    <button onClick={() => handleAnchorBundle(bundle)} style={btnStyle(C.blue, C.blueBg, C.blueBd)}>
-                      ⚓ Anchor to Testnet
+                    <button onClick={() => handleAnchorBundle(bundle)}
+                      style={btnGhost(C.yellow, C.yellowBg, C.yellowBd)}>
+                      <Anchor size={12} />Anchor to Testnet
                     </button>
                   )}
                   {canVerify && (
-                    <button onClick={() => handleVerify(bundle)} style={btnStyle(C.amber, C.amberBg, C.amberBd)}>
-                      🔍 Verify on Blockstream
+                    <button onClick={() => handleVerify(bundle)}
+                      style={btnGhost(C.amber, C.amberBg, C.amberBd)}>
+                      <Search size={12} />Verify on Blockstream
                     </button>
                   )}
                   {canSend && (
-                    <button onClick={() => handleSendBundle(bundle)} style={btnStyle(C.cyan, C.cyanBg, C.cyanBd)}>
-                      📡 Send to Cyber Command
+                    <button onClick={() => handleSendBundle(bundle)}
+                      style={btnGhost(C.teal, C.tealBg, C.tealBd)}>
+                      <Radio size={12} />Send to Cyber Command
                     </button>
                   )}
                   {isWorking && (
-                    <div style={{ textAlign: "center", fontSize: 11, color: C.dim, padding: "4px 0", fontFamily: C.mono }}>
-                      {bundle.status === "anchoring" ? "Broadcasting to Bitcoin testnet…" : "Querying Blockstream API…"}
+                    <div style={{ textAlign: "center", fontSize: 11, color: C.muted,
+                      fontFamily: C.fontTactical, padding: "4px 0", letterSpacing: "0.06em" }}>
+                      <RefreshCw size={11} style={{ display: "inline", marginRight: 6, verticalAlign: "middle" }} />
+                      {bundle.status === "anchoring" ? "BROADCASTING" : "QUERYING"}
                     </div>
                   )}
-                  <button
-                    onClick={() => downloadJson(bundle, `snapshot-${bundle.snapshotId.slice(0,8)}.json`)}
-                    style={btnStyle(C.dim, C.surf3, C.border)}
-                  >
-                    ⬇ Download JSON
+                  <button onClick={() => downloadJson(bundle, `snapshot-${bundle.snapshotId.slice(0,8)}.json`)}
+                    style={btnGhost(C.dim, C.surf3, C.borderHi)}>
+                    <Download size={11} />Download JSON
                   </button>
                 </div>
               </div>
@@ -489,31 +576,37 @@ export default function App() {
 
   function renderTamperedEvents() {
     return (
-      <div style={{ width: 205, flexShrink: 0, background: C.surf, border: `1px solid ${tamperedEvents.length ? C.redBd : C.border}`, borderRadius: 6, padding: "12px 12px" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: tamperedEvents.length ? C.red : C.dim, textTransform: "uppercase", borderBottom: `1px solid ${tamperedEvents.length ? C.redBd : C.border}`, paddingBottom: 7, marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span>Tampered</span>
+      <div style={{ ...panelCard, width: 205, flexShrink: 0,
+        border: `1px solid ${tamperedEvents.length ? C.redBd : C.border}` }}>
+        <div style={{ ...sectionRule, borderBottomColor: tamperedEvents.length ? C.redBd : C.border }}>
+          <span style={{ ...eyebrow, color: tamperedEvents.length ? C.red : C.muted }}>Tampered</span>
           {tamperedEvents.length > 0 && (
-            <span style={{ background: C.redBg, border: `1px solid ${C.redBd}`, color: C.red, fontSize: 11, fontWeight: 700, padding: "1px 6px", borderRadius: 3, fontFamily: C.mono }}>
-              {tamperedEvents.length}
-            </span>
+            <span style={{ fontFamily: C.fontMono, fontSize: 10, fontWeight: 600,
+              color: C.red, background: C.redBg, border: `1px solid ${C.redBd}`,
+              padding: "1px 6px", borderRadius: 2 }}>{tamperedEvents.length}</span>
           )}
         </div>
         {tamperedEvents.length === 0 ? (
-          <div style={{ textAlign: "center", color: C.dim, fontSize: 12, padding: "50px 0" }}>
-            <div style={{ fontSize: 24, marginBottom: 8, opacity: 0.35 }}>✓</div>No violations
+          <div style={{ textAlign: "center", color: C.muted, fontSize: 12,
+            fontFamily: C.fontBody, padding: "48px 0" }}>
+            <CheckCircle2 size={22} color={C.muted} style={{ marginBottom: 8, opacity: 0.4, display: "block", margin: "0 auto 8px" }} />
+            No violations
           </div>
         ) : (
-          <div style={{ height: 520, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {tamperedEvents.map(e => (
-              <div key={e.id} style={{ background: C.redBg, border: `1px solid ${C.redBd}`, borderRadius: 4, padding: "8px 9px" }}>
+              <div key={e.id} style={{ background: C.redBg, border: `1px solid ${C.redBd}`,
+                borderRadius: 4, padding: "8px 9px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
-                  <span style={{ fontFamily: C.mono, fontSize: 11, color: C.red, fontWeight: 700 }}>{e.endpoint}</span>
-                  <span style={{ fontFamily: C.mono, fontSize: 9, color: C.dim }}>{fmtTime(e.timestamp)}</span>
+                  <span style={{ fontFamily: C.fontTactical, fontSize: 11, color: C.red,
+                    fontWeight: 600, letterSpacing: "0.04em" }}>{e.endpoint}</span>
+                  <span style={{ fontFamily: C.fontMono, fontSize: 9, color: C.muted }}>{fmtTime(e.timestamp)}</span>
                 </div>
-                <div style={{ fontSize: 11, color: C.red, marginBottom: 2 }}>{e.label}</div>
-                <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, marginBottom: 7 }}>{e.file}</div>
-                <button onClick={() => restoreEvent(e.id)} style={{ width: "100%", padding: "4px 0", fontSize: 11, borderRadius: 3, border: `1px solid ${C.greenBd}`, background: C.greenBg, color: C.green, cursor: "pointer", fontWeight: 700, fontFamily: C.mono }}>
-                  ↩ RESTORE
+                <div style={{ fontFamily: C.fontCondensed, fontSize: 11, color: C.red, marginBottom: 2 }}>{e.label}</div>
+                <div style={{ fontFamily: C.fontCondensed, fontSize: 10, color: C.muted, marginBottom: 8 }}>{e.file}</div>
+                <button onClick={() => restoreEvent(e.id)}
+                  style={{ ...btnGhost(C.green, C.greenBg, C.greenBd), padding: "4px 0" }}>
+                  <RotateCcw size={11} />Restore
                 </button>
               </div>
             ))}
@@ -525,28 +618,45 @@ export default function App() {
 
   function renderEndpointGrid() {
     return (
-      <div style={{ background: C.surf, border: `1px solid ${C.border}`, borderRadius: 6, padding: "12px 14px" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: C.dim, textTransform: "uppercase", borderBottom: `1px solid ${C.border}`, paddingBottom: 7, marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
-          <span>Tier 1 — Endpoint Nodes</span>
-          <span style={{ fontFamily: C.mono, color: C.muted }}>{Object.keys(endpointRoots).length} / {ENDPOINTS.length} active</span>
+      <div style={panelCard}>
+        <div style={sectionRule}>
+          <span style={eyebrow}>Tier 1 — Endpoint Nodes</span>
+          <span style={{ fontFamily: C.fontMono, fontSize: 10, color: C.muted }}>
+            {Object.keys(endpointRoots).length} / {ENDPOINTS.length} active
+          </span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(195px, 1fr))", gap: 9 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(195px, 1fr))", gap: 8 }}>
           {ENDPOINTS.map(ep => {
             const isTampered = tamperedEps.has(ep);
             const root = endpointRoots[ep];
             const epEvents = events.filter(e => e.endpoint === ep);
             const last = epEvents[0];
             return (
-              <div key={ep} style={{ background: isTampered ? C.redBg : C.surf2, border: `1px solid ${isTampered ? C.redBd : C.border}`, borderRadius: 4, padding: "8px 10px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                  <span style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: isTampered ? C.red : C.blue }}>{ep}</span>
-                  <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 2, fontFamily: C.mono, background: isTampered ? C.redBd : C.greenBg, color: isTampered ? C.red : C.green, border: `1px solid ${isTampered ? C.red : C.greenBd}` }}>
+              <div key={ep} style={{ background: isTampered ? C.redBg : C.surf2,
+                border: `1px solid ${isTampered ? C.redBd : C.border}`, borderRadius: 4, padding: "8px 10px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+                  <span style={{ fontFamily: C.fontTactical, fontSize: 11, fontWeight: 600,
+                    color: isTampered ? C.red : C.yellow, letterSpacing: "0.04em" }}>{ep}</span>
+                  <span style={{ fontFamily: C.fontTactical, fontSize: 9, fontWeight: 600,
+                    letterSpacing: "0.06em", padding: "1px 5px", borderRadius: 2,
+                    background: isTampered ? C.redBd : root ? C.greenBg : C.surf3,
+                    color: isTampered ? C.red : root ? C.green : C.muted,
+                    border: `1px solid ${isTampered ? C.red : root ? C.greenBd : C.border}` }}>
                     {isTampered ? "TAMPERED" : root ? "CLEAN" : "IDLE"}
                   </span>
                 </div>
-                {last && <div style={{ fontSize: 10, color: C.dim, marginBottom: 3 }}>{last.icon} {last.label} · <span style={{ fontFamily: C.mono }}>{fmtTime(last.timestamp)}</span></div>}
-                <div style={{ fontFamily: C.mono, fontSize: 7.5, color: isTampered ? C.redBd : C.muted, wordBreak: "break-all", lineHeight: 1.4 }}>{root || "no data"}</div>
-                <div style={{ fontSize: 10, color: C.muted, marginTop: 3 }}>{epEvents.length} events</div>
+                {last && (
+                  <div style={{ fontFamily: C.fontCondensed, fontSize: 10, color: C.dim, marginBottom: 4 }}>
+                    {last.label} — {fmtTime(last.timestamp)}
+                  </div>
+                )}
+                <div style={{ fontFamily: C.fontMono, fontSize: 7.5,
+                  color: isTampered ? C.redBd : C.muted, wordBreak: "break-all", lineHeight: 1.4 }}>
+                  {root || "no data"}
+                </div>
+                <div style={{ fontFamily: C.fontCondensed, fontSize: 10, color: C.muted, marginTop: 4 }}>
+                  {epEvents.length} events
+                </div>
               </div>
             );
           })}
@@ -559,17 +669,19 @@ export default function App() {
     return (
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {[
-          ["Events Live",   events.length,                                false],
-          ["Endpoints",     Object.keys(endpointRoots).length,            false],
-          ["Tampered",      tamperedEvents.length,                        tamperedEvents.length > 0],
-          ["Bundles",       snapshots.length,                             false],
-          ["Confirmed",     confirmedSnapshots,                           false],
-          ["Transmitted",   transmittedBundles.length,                   false],
-          ["Chain Cost",    "32 B / 5 MIN",                              false],
+          ["Events Live",   events.length,                false],
+          ["Endpoints",     Object.keys(endpointRoots).length, false],
+          ["Tampered",      tamperedEvents.length,        tamperedEvents.length > 0],
+          ["Bundles",       snapshots.length,             false],
+          ["Confirmed",     confirmedCount,               false],
+          ["Transmitted",   transmittedBundles.length,    false],
+          ["Chain Cost",    "32 B / 5 MIN",               false],
         ].map(([label, val, alert]) => (
-          <div key={label} style={{ flex: 1, minWidth: 80, background: C.surf, border: `1px solid ${alert ? C.redBd : C.border}`, borderRadius: 4, padding: "8px 11px" }}>
-            <div style={{ fontSize: 10, color: C.dim, marginBottom: 4, letterSpacing: "0.08em", textTransform: "uppercase" }}>{label}</div>
-            <div style={{ fontSize: 20, fontWeight: 600, fontFamily: C.mono, color: alert ? C.red : C.text }}>{val}</div>
+          <div key={label} style={{ flex: 1, minWidth: 80, background: C.surf,
+            border: `1px solid ${alert ? C.redBd : C.border}`, borderRadius: 4, padding: "8px 12px" }}>
+            <div style={{ ...eyebrow, marginBottom: 5 }}>{label}</div>
+            <div style={{ fontFamily: C.fontTactical, fontSize: 20, fontWeight: 600,
+              color: alert ? C.red : C.text }}>{val}</div>
           </div>
         ))}
       </div>
@@ -578,25 +690,29 @@ export default function App() {
 
   function renderCyberCommand() {
     return (
-      <div style={{ padding: "14px 20px" }}>
-        <div style={{ marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ padding: "16px 20px" }}>
+        <div style={{ marginBottom: 16, display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: C.cyan }}>
-              ◈ Cyber Command — Situational Awareness
+            <div style={{ fontFamily: C.fontTactical, fontSize: 15, fontWeight: 600,
+              letterSpacing: "0.06em", textTransform: "uppercase", color: C.yellow }}>
+              Cyber Command — Situational Awareness
             </div>
-            <div style={{ fontSize: 12, color: C.dim, marginTop: 3 }}>
-              Blockchain-confirmed · Hash Force–transmitted bundles only · {transmittedBundles.length} bundles received
+            <div style={{ fontFamily: C.fontBody, fontSize: 12, color: C.muted, marginTop: 4 }}>
+              Blockchain-confirmed, Hash Force-transmitted bundles only — {transmittedBundles.length} received
             </div>
           </div>
-          <span style={{ fontFamily: C.mono, fontSize: 11, color: C.muted, border: `1px solid ${C.border}`, padding: "4px 10px", borderRadius: 3 }}>READ ONLY</span>
+          <span style={{ ...eyebrow, border: `1px solid ${C.border}`, padding: "4px 10px", borderRadius: 4 }}>
+            READ ONLY
+          </span>
         </div>
 
         {transmittedBundles.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "80px 0", color: C.dim }}>
-            <div style={{ fontSize: 40, marginBottom: 14, opacity: 0.2 }}>◈</div>
-            <div style={{ fontSize: 14, letterSpacing: "0.08em", textTransform: "uppercase" }}>No bundles received</div>
-            <div style={{ fontSize: 12, color: C.muted, marginTop: 10, lineHeight: 1.8 }}>
-              Hash Force → 📸 Snapshot → ⚓ Anchor → 🔍 Verify → 📡 Send to Cyber Command
+          <div style={{ textAlign: "center", padding: "80px 0", color: C.muted }}>
+            <Globe size={36} color={C.muted} style={{ opacity: 0.25, margin: "0 auto 16px", display: "block" }} />
+            <div style={{ fontFamily: C.fontTactical, fontSize: 13, letterSpacing: "0.08em",
+              textTransform: "uppercase" }}>No bundles received</div>
+            <div style={{ fontFamily: C.fontBody, fontSize: 12, color: C.muted, marginTop: 10, lineHeight: 1.8 }}>
+              Hash Force: Snapshot — Anchor — Verify — Send to Cyber Command
             </div>
           </div>
         ) : (
@@ -605,88 +721,119 @@ export default function App() {
               const isExpanded = expandedBundles.has(bundle.snapshotId);
               const violations = bundle.events.filter(e => e.tampered).length;
               return (
-                <div key={bundle.snapshotId} style={{ background: C.surf, border: `1px solid ${violations ? C.redBd : C.greenBd}`, borderRadius: 6, overflow: "hidden" }}>
+                <div key={bundle.snapshotId} style={{ background: C.surf,
+                  border: `1px solid ${violations ? C.redBd : C.greenBd}`,
+                  borderRadius: 6, overflow: "hidden" }}>
 
-                  {/* Bundle card header */}
-                  <div style={{ padding: "10px 16px", background: C.surf2, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+                  <div style={{ padding: "10px 16px", background: C.surf2,
+                    borderBottom: `1px solid ${C.border}`,
+                    display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
                     <div style={{ flex: 1, minWidth: 280 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
-                        <span style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: violations ? C.red : C.green, background: violations ? C.redBg : C.greenBg, border: `1px solid ${violations ? C.redBd : C.greenBd}`, padding: "2px 8px", borderRadius: 2 }}>
-                          {violations ? `⚠ CONTAINS ${violations} VIOLATION${violations !== 1 ? "S" : ""}` : "✓ CLEAN"}
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                        <span style={{ fontFamily: C.fontTactical, fontSize: 9, fontWeight: 600,
+                          letterSpacing: "0.08em",
+                          color: violations ? C.red : C.green,
+                          background: violations ? C.redBg : C.greenBg,
+                          border: `1px solid ${violations ? C.redBd : C.greenBd}`,
+                          padding: "2px 8px", borderRadius: 2 }}>
+                          {violations ? `${violations} VIOLATION${violations !== 1 ? "S" : ""}` : "CLEAN"}
                         </span>
-                        <span style={{ fontFamily: C.mono, fontSize: 10, color: C.dim }}>
-                          {bundle.eventCount} events · {fmtTime(new Date(bundle.capturedAt).getTime())}
+                        <span style={{ fontFamily: C.fontCondensed, fontSize: 11, color: C.dim }}>
+                          {bundle.eventCount} events — {fmtTime(new Date(bundle.capturedAt).getTime())}
                         </span>
                       </div>
-                      <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, marginBottom: 3 }}>
-                        ID: {bundle.snapshotId}
+                      <div style={{ fontFamily: C.fontMono, fontSize: 9, color: C.muted, marginBottom: 3 }}>
+                        {bundle.snapshotId}
                       </div>
-                      <div style={{ fontFamily: C.mono, fontSize: 7.5, color: C.dim, wordBreak: "break-all", lineHeight: 1.5 }}>
+                      <div style={{ fontFamily: C.fontMono, fontSize: 7.5, color: C.muted,
+                        wordBreak: "break-all", lineHeight: 1.5 }}>
                         root: {bundle.merkleRoot}
                       </div>
                       {bundle.txid && (
-                        <div style={{ marginTop: 4 }}>
-                          <a href={bundle.txUrl} target="_blank" rel="noopener noreferrer"
-                            style={{ fontFamily: C.mono, fontSize: 7.5, color: bundle.isDemo ? C.cyan : C.blue, wordBreak: "break-all", lineHeight: 1.5 }}>
-                            ⛓ txid: {bundle.txid}{bundle.isDemo && " (demo)"}
-                          </a>
-                        </div>
+                        <a href={bundle.txUrl} target="_blank" rel="noopener noreferrer"
+                          style={{ display: "block", fontFamily: C.fontMono, fontSize: 7.5,
+                            color: bundle.isDemo ? C.teal : C.yellow,
+                            wordBreak: "break-all", lineHeight: 1.5, marginTop: 3, textDecoration: "none" }}>
+                          txid: {bundle.txid}{bundle.isDemo && " (demo)"}
+                        </a>
                       )}
                     </div>
-
-                    <div style={{ display: "flex", gap: 6, alignItems: "flex-start", flexShrink: 0 }}>
-                      <button onClick={() => toggleBundle(bundle.snapshotId)} style={btnStyle(C.blue, C.blueBg, C.blueBd)}>
-                        {isExpanded ? "▲ Collapse" : "▼ Expand Tree"}
+                    <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                      <button onClick={() => toggleBundle(bundle.snapshotId)}
+                        style={{ ...btnGhost(C.yellow, C.yellowBg, C.yellowBd), width: "auto", padding: "5px 14px" }}>
+                        {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                        {isExpanded ? "Collapse" : "Expand"}
                       </button>
-                      <button onClick={() => downloadJson(bundle, `bundle-${bundle.snapshotId.slice(0,8)}.json`)} style={btnStyle(C.dim, C.surf3, C.border)}>
-                        ⬇ Download JSON
+                      <button onClick={() => downloadJson(bundle, `bundle-${bundle.snapshotId.slice(0,8)}.json`)}
+                        style={{ ...btnGhost(C.dim, C.surf3, C.borderHi), width: "auto", padding: "5px 12px" }}>
+                        <Download size={11} />JSON
                       </button>
                     </div>
                   </div>
 
-                  {/* Expandable tree */}
                   {isExpanded && (
                     <div style={{ padding: "12px 16px" }}>
                       {REGIONS.map(reg => {
-                        const regEvents = bundle.events.filter(e => e.region === reg);
-                        if (!regEvents.length) return null;
+                        const regEvs = bundle.events.filter(e => e.region === reg);
+                        if (!regEvs.length) return null;
                         return (
-                          <div key={reg} style={{ marginBottom: 10 }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: C.cyan, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>
-                              ◈ {reg} <span style={{ fontSize: 10, fontWeight: 400, color: C.dim }}>({regEvents.length} events)</span>
+                          <div key={reg} style={{ marginBottom: 12 }}>
+                            <div style={{ fontFamily: C.fontTactical, fontSize: 11, fontWeight: 600,
+                              letterSpacing: "0.08em", textTransform: "uppercase", color: C.yellow,
+                              marginBottom: 6 }}>
+                              {reg} <span style={{ fontFamily: C.fontCondensed, fontSize: 10,
+                                fontWeight: 400, color: C.muted }}>({regEvs.length})</span>
                             </div>
                             {BASES.filter(b => BASE_REGION[b] === reg).map(base => {
-                              const baseEvents = regEvents.filter(e => e.base === base);
-                              if (!baseEvents.length) return null;
+                              const baseEvs = regEvs.filter(e => e.base === base);
+                              if (!baseEvs.length) return null;
                               return (
                                 <div key={base} style={{ marginLeft: 14, marginBottom: 8 }}>
-                                  <div style={{ fontSize: 11, fontWeight: 700, color: C.blue, marginBottom: 5 }}>
-                                    ▸ {base} <span style={{ fontSize: 10, fontWeight: 400, color: C.dim }}>({baseEvents.length})</span>
+                                  <div style={{ fontFamily: C.fontTactical, fontSize: 10, fontWeight: 600,
+                                    color: C.dim, marginBottom: 5, letterSpacing: "0.04em" }}>
+                                    {base} <span style={{ fontFamily: C.fontCondensed, fontWeight: 400,
+                                      color: C.muted }}>({baseEvs.length})</span>
                                   </div>
                                   {ENDPOINTS.filter(ep => ENDPOINT_BASE[ep] === base).map(ep => {
-                                    const epEvents = baseEvents.filter(e => e.endpoint === ep);
-                                    if (!epEvents.length) return null;
+                                    const epEvs = baseEvs.filter(e => e.endpoint === ep);
+                                    if (!epEvs.length) return null;
                                     return (
                                       <div key={ep} style={{ marginLeft: 14, marginBottom: 6 }}>
-                                        <div style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: C.blue, marginBottom: 4 }}>
-                                          → {ep}
+                                        <div style={{ fontFamily: C.fontTactical, fontSize: 10, fontWeight: 600,
+                                          color: C.yellow, marginBottom: 4, letterSpacing: "0.04em" }}>
+                                          {ep}
                                         </div>
                                         <div style={{ display: "flex", flexDirection: "column", gap: 3, marginLeft: 14 }}>
-                                          {epEvents.map(ev => (
-                                            <div key={ev.id} style={{ background: ev.tampered ? C.redBg : C.greenBg, border: `1px solid ${ev.tampered ? C.redBd : C.greenBd}`, borderRadius: 3, padding: "6px 10px" }}>
-                                              <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3, flexWrap: "wrap" }}>
-                                                {ev.tampered && (
-                                                  <span style={{ fontFamily: C.mono, fontSize: 9, fontWeight: 700, color: C.red, background: C.redBd, padding: "1px 5px", borderRadius: 2 }}>
-                                                    ⚠ INTEGRITY VIOLATION
+                                          {epEvs.map(ev => (
+                                            <div key={ev.id} style={{ background: ev.tampered ? C.redBg : C.greenBg,
+                                              border: `1px solid ${ev.tampered ? C.redBd : C.greenBd}`,
+                                              borderRadius: 3, padding: "6px 10px" }}>
+                                              {ev.tampered && (
+                                                <div style={{ display: "flex", alignItems: "center", gap: 5,
+                                                  marginBottom: 4 }}>
+                                                  <AlertTriangle size={11} color={C.red} />
+                                                  <span style={{ fontFamily: C.fontTactical, fontSize: 9,
+                                                    fontWeight: 600, color: C.red, letterSpacing: "0.06em" }}>
+                                                    INTEGRITY VIOLATION
                                                   </span>
-                                                )}
-                                                <span style={{ fontSize: 11, fontWeight: 600, color: ev.tampered ? C.red : C.text }}>{ev.eventType}</span>
-                                                <span style={{ fontFamily: C.mono, fontSize: 10, color: C.dim }}>{ev.file}</span>
-                                                <span style={{ fontFamily: C.mono, fontSize: 9, color: C.muted }}>{ev.user}</span>
-                                                <span style={{ fontFamily: C.mono, fontSize: 9, color: C.muted }}>{fmtTime(ev.timestamp)}</span>
+                                                </div>
+                                              )}
+                                              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                                                <span style={{ fontFamily: C.fontCondensed, fontSize: 12,
+                                                  fontWeight: 600, color: ev.tampered ? C.red : C.text }}>
+                                                  {ev.eventType}
+                                                </span>
+                                                <span style={{ fontFamily: C.fontCondensed, fontSize: 11,
+                                                  color: C.dim }}>{ev.file}</span>
+                                                <span style={{ fontFamily: C.fontMono, fontSize: 9,
+                                                  color: C.muted }}>{ev.user}</span>
+                                                <span style={{ fontFamily: C.fontMono, fontSize: 9,
+                                                  color: C.muted }}>{fmtTime(ev.timestamp)}</span>
                                               </div>
-                                              <div style={{ fontFamily: C.mono, fontSize: 7.5, color: ev.tampered ? C.red : C.greenBd, wordBreak: "break-all", lineHeight: 1.5 }}>
-                                                hash: {ev.payloadHash || "—"}
+                                              <div style={{ fontFamily: C.fontMono, fontSize: 7.5,
+                                                color: ev.tampered ? C.red : C.greenBd,
+                                                wordBreak: "break-all", lineHeight: 1.5, marginTop: 4 }}>
+                                                {ev.payloadHash}
                                               </div>
                                             </div>
                                           ))}
@@ -708,20 +855,21 @@ export default function App() {
           </div>
         )}
 
-        {/* Cyber Command footer */}
         {transmittedBundles.length > 0 && (
           <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
             {[
-              ["Bundles Received",  transmittedBundles.length,                                                  false],
-              ["Total Events",      transmittedBundles.reduce((s, b) => s + b.eventCount, 0),                  false],
-              ["Clean Bundles",     transmittedBundles.filter(b => b.integrityStatus === "CLEAN").length,       false],
-              ["Violations",        transmittedBundles.filter(b => b.integrityStatus !== "CLEAN").length,       transmittedBundles.some(b => b.integrityStatus !== "CLEAN")],
-              ["On-Chain",          transmittedBundles.filter(b => !b.isDemo).length,                          false],
-              ["Demo Mode",         transmittedBundles.filter(b => b.isDemo).length,                           false],
+              ["Bundles Received",  transmittedBundles.length,                                                false],
+              ["Total Events",      transmittedBundles.reduce((s, b) => s + b.eventCount, 0),                false],
+              ["Clean",             transmittedBundles.filter(b => b.integrityStatus === "CLEAN").length,    false],
+              ["Violations",        transmittedBundles.filter(b => b.integrityStatus !== "CLEAN").length,    transmittedBundles.some(b => b.integrityStatus !== "CLEAN")],
+              ["On-Chain",          transmittedBundles.filter(b => !b.isDemo).length,                        false],
+              ["Demo Mode",         transmittedBundles.filter(b => b.isDemo).length,                         false],
             ].map(([label, val, alert]) => (
-              <div key={label} style={{ flex: 1, minWidth: 90, background: C.surf, border: `1px solid ${alert ? C.redBd : C.border}`, borderRadius: 4, padding: "8px 11px" }}>
-                <div style={{ fontSize: 10, color: C.dim, marginBottom: 4, letterSpacing: "0.08em", textTransform: "uppercase" }}>{label}</div>
-                <div style={{ fontSize: 20, fontWeight: 600, fontFamily: C.mono, color: alert ? C.red : C.text }}>{val}</div>
+              <div key={label} style={{ flex: 1, minWidth: 90, background: C.surf,
+                border: `1px solid ${alert ? C.redBd : C.border}`, borderRadius: 4, padding: "8px 12px" }}>
+                <div style={{ ...eyebrow, marginBottom: 5 }}>{label}</div>
+                <div style={{ fontFamily: C.fontTactical, fontSize: 20, fontWeight: 600,
+                  color: alert ? C.red : C.text }}>{val}</div>
               </div>
             ))}
           </div>
@@ -732,106 +880,114 @@ export default function App() {
 
   // ── Root render ───────────────────────────────────────────────────────────
   return (
-    <div style={{ fontFamily: "'Inter','Segoe UI',system-ui,sans-serif", background: C.bg, color: C.text, minHeight: "100vh", fontSize: 14 }}>
+    <div style={{ fontFamily: C.fontBody, background: C.bg, color: C.text, minHeight: "100vh", fontSize: 14 }}>
 
-      {/* ── Header ── */}
-      <div style={{ background: C.surf, borderBottom: `1px solid ${C.border}`, padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <span style={{ background: C.amberBg, border: `1px solid ${C.amberBd}`, color: C.amber, fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 2, letterSpacing: "0.1em", fontFamily: C.mono }}>
+      {/* Header */}
+      <div style={{ background: C.surf, borderBottom: `1px solid ${C.border}`,
+        padding: "10px 20px", display: "flex", alignItems: "center",
+        justifyContent: "space-between", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ background: C.yellowBg, border: `1px solid ${C.yellowBd}`,
+            color: C.yellow, fontFamily: C.fontTactical, fontSize: 10, fontWeight: 600,
+            padding: "3px 10px", borderRadius: 2, letterSpacing: "0.12em" }}>
             UNCLASSIFIED // DEMO
-          </span>
+          </div>
           <div>
-            <div style={{ fontSize: 17, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+            <div style={{ fontFamily: C.fontTactical, fontSize: 16, fontWeight: 600,
+              letterSpacing: "0.04em", textTransform: "uppercase", color: C.text }}>
               Immutable DoDIN — Federated Merkle Audit
             </div>
-            <div style={{ fontSize: 12, color: C.dim, marginTop: 2 }}>
-              Hierarchical Merkle Tree · Bitcoin Testnet Anchor
+            <div style={{ fontFamily: C.fontBody, fontSize: 12, color: C.muted, marginTop: 2 }}>
+              Hierarchical Merkle Tree — Bitcoin Testnet Anchor
             </div>
           </div>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           {[
-            { id: "hashforce",    label: "⬡ HASH FORCE",   sub: "Operator View"                           },
-            { id: "cybercommand", label: "◈ CYBER COMMAND", sub: `${transmittedBundles.length} bundles`    },
-            { id: "both",         label: "⊞ BOTH",          sub: "Split View"                              },
+            { id: "hashforce",    label: "HASH FORCE",    sub: "Operator View"                              },
+            { id: "cybercommand", label: "CYBER COMMAND", sub: `${transmittedBundles.length} bundles`       },
+            { id: "both",         label: "BOTH",          sub: "Split View"                                  },
           ].map(tab => (
             <button key={tab.id} onClick={() => setPanel(tab.id)} style={{
               padding: "6px 14px", borderRadius: 4, cursor: "pointer", textAlign: "left",
-              border:     `1px solid ${panel === tab.id ? C.blue : C.border}`,
-              background: panel === tab.id ? C.blueBg : C.surf2,
-              color:      panel === tab.id ? C.blue : C.dim,
+              border:     `1px solid ${panel === tab.id ? C.yellowBd : C.border}`,
+              background: panel === tab.id ? C.yellowBg : C.surf2,
+              color:      panel === tab.id ? C.yellow : C.dim,
+              transition: "border-color 200ms, background 200ms",
             }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.05em" }}>{tab.label}</div>
-              <div style={{ fontSize: 10, opacity: 0.75, marginTop: 1 }}>{tab.sub}</div>
+              <div style={{ fontFamily: C.fontTactical, fontSize: 11, fontWeight: 600,
+                letterSpacing: "0.06em" }}>{tab.label}</div>
+              <div style={{ fontFamily: C.fontBody, fontSize: 10, opacity: 0.7, marginTop: 1 }}>{tab.sub}</div>
             </button>
           ))}
 
-          <div style={{ display: "flex", alignItems: "center", gap: 7, marginLeft: 8 }}>
-            <span style={{ width: 8, height: 8, borderRadius: "50%", display: "inline-block", background: isRunning ? C.green : C.amber, boxShadow: `0 0 8px ${isRunning ? C.green : C.amber}` }} />
-            <span style={{ fontFamily: C.mono, fontSize: 12, fontWeight: 700, color: isRunning ? C.green : C.amber, letterSpacing: "0.08em" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: 8,
+            paddingLeft: 12, borderLeft: `1px solid ${C.border}` }}>
+            <div style={{ width: 7, height: 7, borderRadius: "50%",
+              background: isRunning ? C.green : C.amber }} />
+            <span style={{ fontFamily: C.fontTactical, fontSize: 11, fontWeight: 600,
+              color: isRunning ? C.green : C.amber, letterSpacing: "0.08em" }}>
               {isRunning ? "LIVE" : "PAUSED"}
             </span>
-            <button onClick={() => setIsRunning(r => !r)} style={{ padding: "5px 12px", borderRadius: 4, border: `1px solid ${C.borderHi}`, background: C.surf2, color: C.text, cursor: "pointer", fontSize: 12 }}>
-              {isRunning ? "⏸ Pause" : "▶ Resume"}
+            <button onClick={() => setIsRunning(r => !r)} style={{ display: "flex", alignItems: "center",
+              gap: 5, padding: "5px 12px", borderRadius: 4, border: `1px solid ${C.borderHi}`,
+              background: C.surf2, color: C.text, cursor: "pointer",
+              fontFamily: C.fontTactical, fontSize: 11, letterSpacing: "0.04em" }}>
+              {isRunning ? <><Pause size={12} />Pause</> : <><Play size={12} />Resume</>}
             </button>
           </div>
         </div>
       </div>
 
-      {/* ── Tamper Alert ── */}
+      {/* Integrity violation alert */}
       {tamperAlert && (
-        <div style={{ background: C.redBg, borderBottom: `1px solid ${C.redBd}`, borderLeft: `4px solid ${C.red}`, padding: "10px 20px", display: "flex", gap: 12, alignItems: "flex-start" }}>
-          <span style={{ fontSize: 20 }}>🚨</span>
+        <div style={{ background: C.redBg, borderBottom: `1px solid ${C.redBd}`,
+          borderLeft: `2px solid ${C.red}`, padding: "10px 20px",
+          display: "flex", gap: 12, alignItems: "flex-start" }}>
+          <AlertTriangle size={18} color={C.red} style={{ flexShrink: 0, marginTop: 1 }} />
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, color: C.red, fontSize: 13, letterSpacing: "0.06em" }}>INTEGRITY VIOLATION DETECTED — ENDPOINT QUARANTINED</div>
-            <div style={{ fontSize: 12, color: C.red, opacity: 0.9, marginTop: 3 }}>
-              Endpoint: <strong>{tamperAlert.endpoint}</strong> · File: <span style={{ fontFamily: C.mono }}>{tamperAlert.file}</span>
+            <div style={{ fontFamily: C.fontTactical, fontWeight: 600, color: C.red,
+              fontSize: 13, letterSpacing: "0.06em" }}>
+              INTEGRITY VIOLATION DETECTED — ENDPOINT QUARANTINED
             </div>
-            <div style={{ fontFamily: C.mono, fontSize: 9, color: C.red, opacity: 0.7, marginTop: 3, lineHeight: 1.8 }}>
-              PREV: {tamperAlert.oldRoot}<br />NOW:  {tamperAlert.newRoot}
+            <div style={{ fontFamily: C.fontBody, fontSize: 12, color: C.red, opacity: 0.85, marginTop: 3 }}>
+              Endpoint: <strong>{tamperAlert.endpoint}</strong> — File: <span style={{ fontFamily: C.fontMono }}>{tamperAlert.file}</span>
+            </div>
+            <div style={{ fontFamily: C.fontMono, fontSize: 8, color: C.red, opacity: 0.6,
+              marginTop: 4, lineHeight: 1.8 }}>
+              PREV: {tamperAlert.oldRoot}<br />NOW:&nbsp; {tamperAlert.newRoot}
             </div>
           </div>
-          <button onClick={() => setTamperAlert(null)} style={{ background: "transparent", border: `1px solid ${C.redBd}`, color: C.red, cursor: "pointer", padding: "3px 8px", borderRadius: 3, fontSize: 11 }}>✕</button>
+          <button onClick={() => setTamperAlert(null)} style={{ background: "transparent",
+            border: `1px solid ${C.redBd}`, color: C.red, cursor: "pointer",
+            padding: "3px 8px", borderRadius: 4, fontFamily: C.fontTactical, fontSize: 11 }}>
+            Dismiss
+          </button>
         </div>
       )}
 
-      {/* ════════════════════════════════ HASH FORCE ════════════════════════════ */}
+      {/* Hash Force */}
       {(panel === "hashforce" || panel === "both") && (
-        <div style={{ padding: panel === "both" ? "12px 16px" : "14px 20px", display: "flex", flexDirection: "column", gap: 12, borderBottom: panel === "both" ? `2px solid ${C.borderHi}` : "none" }}>
-
+        <div style={{ padding: panel === "both" ? "12px 16px" : "14px 20px",
+          display: "flex", flexDirection: "column", gap: 12,
+          borderBottom: panel === "both" ? `2px solid ${C.borderHi}` : "none" }}>
           {panel === "both" && (
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: C.dim, textTransform: "uppercase" }}>
-              ⬡ HASH FORCE — OPERATOR VIEW
-            </div>
+            <div style={{ ...eyebrow, color: C.yellow }}>Hash Force — Operator View</div>
           )}
-
-          {/* 4-column row */}
           <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
             {renderMerkleHierarchy()}
             {renderLiveEvents()}
             {renderPendingQueue()}
             {renderTamperedEvents()}
           </div>
-
           {renderEndpointGrid()}
           {renderFooterStats()}
         </div>
       )}
 
-      {/* ════════════════════════════ CYBER COMMAND ═════════════════════════════ */}
+      {/* Cyber Command */}
       {(panel === "cybercommand" || panel === "both") && renderCyberCommand()}
-
     </div>
   );
-}
-
-// ── Shared button style helper ────────────────────────────────────────────────
-function btnStyle(color, bg, bd) {
-  return {
-    width: "100%", padding: "5px 0", fontSize: 11, borderRadius: 3,
-    border: `1px solid ${bd}`, background: bg, color, cursor: "pointer",
-    fontFamily: "'Courier New', Consolas, 'Lucida Console', monospace",
-    fontWeight: 700, letterSpacing: "0.04em",
-  };
 }
