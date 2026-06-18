@@ -19,17 +19,56 @@ The global root is anchored to the Bitcoin testnet every 5 minutes (30 seconds i
 
 Click **Tamper** on any live event to simulate an adversarial log modification. The Merkle root instantly invalidates and a quarantine alert fires showing the exact endpoint, file, and root hash mismatch.
 
+## Running the UI
+
+```bash
+npm install
+npm run dev
+```
+
+Open http://localhost:5173. The **Blockchain Anchor** tab shows the current global root hash.
+
 ## Blockchain anchoring
 
-Provide a testnet WIF private key to broadcast a real `OP_RETURN` transaction via the Blockstream Esplora API. Without a key, the component runs in demo/preview mode showing what would be broadcast.
+`broadcast.js` signs and broadcasts a real Bitcoin testnet `OP_RETURN` transaction embedding the 32-byte Merkle root.
 
-To broadcast for real:
-1. `npm i bitcoinjs-lib`
-2. Fund a testnet wallet via the [Blockstream faucet](https://blockstream.info/testnet/faucet)
-3. Build an `OP_RETURN` output with the 32-byte global root hash
-4. Sign with your WIF key and POST to `https://blockstream.info/testnet/api/tx`
+### 1. Generate a testnet wallet
 
-## Usage
+```bash
+node broadcast.js --keygen
+```
+
+This prints an address and WIF private key. Save both.
+
+### 2. Fund the address
+
+Get free testnet BTC from a faucet (e.g. https://coinfaucet.eu/en/btc-testnet/). Paste your address and submit — funds arrive in ~60 seconds.
+
+### 3. Broadcast
+
+Copy the 64-character hex root hash from the **Blockchain Anchor** tab in the UI, then run:
+
+```bash
+node broadcast.js <WIF_KEY> <ROOT_HASH_HEX>
+```
+
+Example output:
+```
+Address : tb1q55pfcqrx66dqr5twphsydakcsvmk597llfmxfn
+Root    : b0d6f96e74447e09a5ba210fa9e0022b6d882f9ebe81252498285092c5d2da09
+UTXO    : d018308f...f57f6:0 (177384 sats)
+Fee     : 1500 sats  Change: 175884 sats
+
+Broadcasting…
+
+✅ Confirmed!
+TXID    : 6509251f3bb69b8c01f7dfd6a0cb40db852e5a96a115598e758ac066939406b0
+View    : https://blockstream.info/testnet/tx/6509251f...
+```
+
+Verify the embedded hash at https://blockstream.info/testnet — look for the `OP_RETURN` output in the transaction.
+
+## Usage as a component
 
 Drop `immutable-dodin-demo.jsx` into any React project and render `<App />`. No external dependencies beyond React itself — SHA-256 uses the browser's native `crypto.subtle` API.
 
