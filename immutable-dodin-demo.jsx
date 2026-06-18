@@ -325,8 +325,8 @@ export default function App() {
           <span style={{ fontFamily: C.mono, color: C.muted }}>{events.length} total</span>
         </div>
 
-        <div style={{ flex: 1, height: 420, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
-          {events.slice(0, 60).map((e, i) => (
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {events.slice(0, 6).map((e, i) => (
             <div key={e.id} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "5px 7px", borderRadius: 4, background: e.tampered ? C.redBg : C.surf2, border: `1px solid ${e.tampered ? C.redBd : C.border}` }}>
               <span style={{ fontSize: 13, lineHeight: 1.6, flexShrink: 0 }}>{e.icon}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
