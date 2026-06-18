@@ -4,7 +4,7 @@
   "description": "A React component demonstrating a hierarchical Merkle tree audit system for DoDIN endpoints, with Bitcoin testnet anchoring.",
   "main": "index.js",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"vite\" \"node server.js\"",
     "build": "vite build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -13,7 +13,10 @@
   "license": "ISC",
   "dependencies": {
     "bitcoinjs-lib": "^7.0.1",
+    "concurrently": "^8.2.2",
+    "dotenv": "^17.4.2",
     "ecpair": "^3.0.1",
+    "express": "^5.2.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "tiny-secp256k1": "^2.2.4"

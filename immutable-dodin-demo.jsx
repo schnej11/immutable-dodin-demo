@@ -59,22 +59,19 @@ function genEvent(id) {
   };
 }
 
-// ── Bitcoin Testnet helpers (Blockstream Esplora) ─────────────────────────────
-async function broadcastToTestnet(rootHash, wifKey) {
-  // Build OP_RETURN tx embedding the 32-byte hash
-  // NOTE: Full raw tx building requires bitcoin-js; here we call a helper endpoint
-  // For demo: we use Blockstream's testnet API to show the anchor workflow
-  // Real implementation needs: wallet UTXO selection + tx signing with WIF key
-  const endpoint = `https://blockstream.info/testnet/api`;
+// ── Bitcoin Testnet helpers (local anchor server) ─────────────────────────────
+async function broadcastToTestnet(rootHash) {
   try {
-    // Step 1: Get UTXOs for address derived from WIF key
-    // (Simplified - in production use bitcoinjs-lib for signing)
-    const res = await fetch(`${endpoint}/address/tb1qtest/utxo`);
-    if (!res.ok) throw new Error("UTXO fetch failed");
-    const utxos = await res.json();
-    return { success: false, msg: "Full tx signing requires bitcoinjs-lib. See instructions below.", utxos };
-  } catch(e) {
-    return { success: false, msg: e.message };
+    const res = await fetch("http://localhost:3001/anchor", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rootHash }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { success: false, msg: data.error };
+    return { success: true, txid: data.txid, url: data.url };
+  } catch (e) {
+    return { success: false, msg: "Anchor server not running. Start it with: npm run dev" };
   }
 }
 
@@ -108,8 +105,6 @@ export default function App() {
   const [prevGlobalRoot, setPrevGlobalRoot] = useState(null);
   const [tamperAlert, setTamperAlert] = useState(null);
   const [anchorHistory, setAnchorHistory] = useState([]);
-  const [wifKey, setWifKey] = useState("");
-  const [txid, setTxid] = useState("");
   const [broadcastStatus, setBroadcastStatus] = useState(null);
   const [isRunning, setIsRunning] = useState(true);
   const [activeTab, setActiveTab] = useState("live");
@@ -240,27 +235,16 @@ export default function App() {
     };
     setAnchorHistory(prev => [anchor, ...prev].slice(0, 10));
 
-    if (wifKey.trim()) {
-      const result = await broadcastToTestnet(globalRoot, wifKey.trim());
-      const finalAnchor = {
-        ...anchor,
-        status: result.success ? "confirmed" : "manual",
-        txid: result.txid || null,
-        msg: result.msg,
-      };
-      setBroadcastStatus(finalAnchor);
-      setAnchorHistory(prev => [finalAnchor, ...prev.slice(1)]);
-    } else {
-      // Demo mode: show what WOULD be broadcast
-      const demoAnchor = {
-        ...anchor,
-        status: "demo",
-        opReturn: `OP_RETURN ${globalRoot}`,
-        msg: "No WIF key provided — showing transaction preview only.",
-      };
-      setBroadcastStatus(demoAnchor);
-      setAnchorHistory(prev => [demoAnchor, ...prev.slice(1)]);
-    }
+    const result = await broadcastToTestnet(globalRoot);
+    const finalAnchor = {
+      ...anchor,
+      status: result.success ? "confirmed" : "error",
+      txid: result.txid || null,
+      url: result.url || null,
+      msg: result.msg || null,
+    };
+    setBroadcastStatus(finalAnchor);
+    setAnchorHistory(prev => [finalAnchor, ...prev.slice(1)]);
     setLastAnchorTime(Date.now());
     setAnchorLoading(false);
   };
@@ -548,36 +532,6 @@ export default function App() {
             </div>
           </div>
 
-          <div style={{
-            background: "var(--color-background-secondary)",
-            border: "0.5px solid var(--color-border-tertiary)",
-            borderRadius: 8,
-            padding: "14px 16px",
-          }}>
-            <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 6 }}>WIF Private Key (testnet wallet)</div>
-            <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginBottom: 10 }}>
-              Optional. Provide a testnet WIF key to sign and broadcast a real OP_RETURN transaction. Leave blank for demo preview mode.{" "}
-              <a href="https://blockstream.info/testnet/faucet" target="_blank" rel="noopener noreferrer" style={{ color: "var(--color-text-info)" }}>Get testnet BTC ↗</a>
-            </div>
-            <input
-              type="password"
-              value={wifKey}
-              onChange={e => setWifKey(e.target.value)}
-              placeholder="cPastYourWIFKeyHere… (optional)"
-              style={{
-                width: "100%",
-                padding: "8px 10px",
-                borderRadius: 6,
-                border: "0.5px solid var(--color-border-secondary)",
-                background: "var(--color-background-primary)",
-                color: "var(--color-text-primary)",
-                fontSize: 12,
-                fontFamily: "var(--font-mono, monospace)",
-                boxSizing: "border-box",
-              }}
-            />
-          </div>
-
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <button
               onClick={handleAnchor}
@@ -604,46 +558,24 @@ export default function App() {
 
           {broadcastStatus && (
             <div style={{
-              background: broadcastStatus.status === "demo"
-                ? "var(--color-background-info)"
-                : broadcastStatus.status === "confirmed"
+              background: broadcastStatus.status === "confirmed"
                 ? "var(--color-background-success)"
-                : "var(--color-background-warning)",
-              border: `0.5px solid ${broadcastStatus.status === "demo" ? "var(--color-border-info)" : broadcastStatus.status === "confirmed" ? "var(--color-border-success)" : "var(--color-border-warning)"}`,
+                : "var(--color-background-danger)",
+              border: `0.5px solid ${broadcastStatus.status === "confirmed" ? "var(--color-border-success)" : "var(--color-border-danger)"}`,
               borderRadius: 8,
               padding: "12px 14px",
             }}>
               <div style={{ fontWeight: 500, fontSize: 13, marginBottom: 6 }}>
-                {broadcastStatus.status === "demo" ? "🔍 Transaction Preview (Demo Mode)" :
-                 broadcastStatus.status === "confirmed" ? "✅ Confirmed on Bitcoin Testnet" :
-                 "⚙️ Manual Broadcast Required"}
+                {broadcastStatus.status === "confirmed" ? "✅ Confirmed on Bitcoin Testnet" : "❌ Broadcast failed"}
               </div>
-
-              {broadcastStatus.status === "demo" && (
-                <>
-                  <div style={{ fontSize: 12, marginBottom: 8, color: "var(--color-text-secondary)" }}>
-                    {broadcastStatus.msg}
-                  </div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, marginBottom: 6 }}>
-                    <strong>OP_RETURN payload (hex):</strong><br />
-                    <code>{broadcastStatus.root}</code>
-                  </div>
-                  <div style={{ fontSize: 11, marginTop: 10, padding: "8px 10px", background: "var(--color-background-primary)", borderRadius: 6, border: "0.5px solid var(--color-border-tertiary)" }}>
-                    <strong>To broadcast for real:</strong>
-                    <ol style={{ margin: "6px 0 0 0", paddingLeft: 16, lineHeight: 1.8, color: "var(--color-text-secondary)" }}>
-                      <li>Install <code>bitcoinjs-lib</code>: <code>npm i bitcoinjs-lib</code></li>
-                      <li>Create a testnet wallet and fund it via the <a href="https://blockstream.info/testnet/faucet" target="_blank" rel="noopener noreferrer">Blockstream faucet ↗</a></li>
-                      <li>Build an <code>OP_RETURN</code> output with the 32-byte root hash above</li>
-                      <li>Sign with your WIF key and POST the raw hex to <code>https://blockstream.info/testnet/api/tx</code></li>
-                      <li>Verify at <a href={`https://blockstream.info/testnet/`} target="_blank" rel="noopener noreferrer">blockstream.info/testnet ↗</a></li>
-                    </ol>
-                  </div>
-                </>
+              {broadcastStatus.msg && (
+                <div style={{ fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 6 }}>
+                  {broadcastStatus.msg}
+                </div>
               )}
-
               {broadcastStatus.txid && (
                 <a
-                  href={`https://blockstream.info/testnet/tx/${broadcastStatus.txid}`}
+                  href={broadcastStatus.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ fontSize: 12, color: "var(--color-text-info)", fontFamily: "var(--font-mono)" }}
