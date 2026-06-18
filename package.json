@@ -1,0 +1,17 @@
+{
+  "name": "immutable-dodin-demo",
+  "version": "1.0.0",
+  "description": "A React component demonstrating a hierarchical Merkle tree audit system for DoDIN endpoints, with Bitcoin testnet anchoring.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bitcoinjs-lib": "^7.0.1",
+    "ecpair": "^3.0.1",
+    "tiny-secp256k1": "^2.2.4"
+  }
+}
