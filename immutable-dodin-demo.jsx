@@ -140,7 +140,7 @@ export default function App() {
   useEffect(() => {
     if (!isRunning) return;
     const t = setInterval(() => {
-      setEvents(prev => [genEvent(++counterRef.current), ...prev].slice(0, 100));
+      setEvents(prev => [genEvent(++counterRef.current), ...prev]);
     }, 1200);
     return () => clearInterval(t);
   }, [isRunning]);
@@ -212,6 +212,8 @@ export default function App() {
       status: "pending", txid: null, isDemo: false, txUrl: null, verifyNote: null,
     };
     setSnapshots(prev => [bundle, ...prev]);
+    setEvents([]);
+    setEventHashes([]);
     setSnapshotting(false);
   };
 
