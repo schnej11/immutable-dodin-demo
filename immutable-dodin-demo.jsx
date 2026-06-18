@@ -422,8 +422,8 @@ export default function App() {
           <span style={{ fontFamily: C.fontMono, fontSize: 10, color: C.muted }}>{events.length} total</span>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          {events.slice(0, 6).map((e, i) => (
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, overflow: "hidden" }}>
+          {events.slice(0, 4).map((e, i) => (
             <div key={e.id} style={{ display: "flex", alignItems: "flex-start", gap: 8,
               padding: "7px 9px", borderRadius: 4,
               background: e.tampered ? C.redBg : C.surf2,
@@ -460,7 +460,7 @@ export default function App() {
           )}
         </div>
 
-        <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
+        <div style={{ marginTop: "auto", paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
           <button onClick={handleSnapshot} disabled={!events.length || !globalRoot || snapshotting}
             style={btnPrimary(!events.length || !globalRoot || snapshotting)}>
             <Camera size={14} />
