@@ -1,7 +1,7 @@
 {
   "name": "immutable-dodin-demo",
   "version": "1.0.0",
-  "description": "A React component demonstrating a hierarchical Merkle tree audit system for DoDIN endpoints, with Bitcoin testnet anchoring.",
+  "description": "A React component demonstrating a hierarchical Merkle tree audit system for BTCIN endpoints, with Bitcoin testnet anchoring.",
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"vite\" \"node server.js\"",

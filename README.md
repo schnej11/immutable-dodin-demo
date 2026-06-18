@@ -1,10 +1,10 @@
-# Immutable DoDIN — Federated Merkle Audit Demo
+# Immutable BTCIN — Federated Merkle Audit Demo
 
-A React dashboard demonstrating a hierarchical Merkle tree audit system for DoDIN endpoints, with real Bitcoin testnet anchoring.
+A React dashboard demonstrating a hierarchical Merkle tree audit system for BTCIN endpoints, with real Bitcoin testnet anchoring.
 
 ## What it does
 
-Simulates a live event feed from DoDIN endpoints (file saves, AI prompts, CAC logins, network connections) and cryptographically hashes each event using SHA-256. Events roll up into a 4-tier Merkle tree:
+Simulates a live event feed from BTCIN endpoints (file saves, AI prompts, CAC logins, network connections) and cryptographically hashes each event using SHA-256. Events roll up into a 4-tier Merkle tree:
 
 | Tier | Level |
 |------|-------|

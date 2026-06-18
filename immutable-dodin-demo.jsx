@@ -1224,7 +1224,7 @@ export default function App() {
           <div>
             <div style={{ fontFamily: C.fontTactical, fontSize: 16, fontWeight: 600,
               letterSpacing: "0.04em", textTransform: "uppercase", color: C.text }}>
-              Immutable DoDIN — Federated Merkle Audit
+              Immutable BTCIN — Federated Merkle Audit
             </div>
             <div style={{ fontFamily: C.fontBody, fontSize: 12, color: C.muted, marginTop: 2 }}>
               Hierarchical Merkle Tree — Bitcoin Testnet Anchor
