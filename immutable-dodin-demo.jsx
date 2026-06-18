@@ -299,10 +299,10 @@ export default function App() {
         .map(b => b.toString(16).padStart(2, "0")).join("");
       setMpcQueue(prev => prev.map(b => {
         if (b.bundleId !== bundleId) return b;
-        const newLog  = [...b.mpcSigningLog, { node: nodeId, decision, partialSig, timestamp: Date.now() }];
-        const signed  = newLog.filter(e => e.decision === "SIGNED").length;
-        const rejected= newLog.filter(e => e.decision === "REJECTED").length;
-        const newStatus = signed >= 3 ? "THRESHOLD_MET" : rejected >= 3 ? "FAILED" : b.mpcStatus;
+        const newLog      = [...b.mpcSigningLog, { node: nodeId, decision, partialSig, timestamp: Date.now() }];
+        const honestSigned = newLog.filter(e => e.decision === "SIGNED" && !e.isCompromised).length;
+        const rejected     = newLog.filter(e => e.decision === "REJECTED").length;
+        const newStatus    = honestSigned >= 3 ? "THRESHOLD_MET" : rejected >= 3 ? "FAILED" : b.mpcStatus;
         return { ...b, mpcSigningLog: newLog, mpcStatus: newStatus };
       }));
       setSigningPending(prev => { const s = new Set(prev); s.delete(key); return s; });
@@ -312,12 +312,41 @@ export default function App() {
   const handleCombineAndBroadcast = async (bundleId) => {
     const bundle = mpcQueue.find(b => b.bundleId === bundleId);
     if (!bundle) return;
-    const sigs = bundle.mpcSigningLog.filter(e => e.decision === "SIGNED").map(e => e.partialSig);
-    const combinedSignature = await sha256(sigs.join(""));
+    const compromised  = bundle.mpcSigningLog.filter(e => e.isCompromised);
+    const honestSigs   = bundle.mpcSigningLog
+      .filter(e => e.decision === "SIGNED" && !e.isCompromised)
+      .map(e => e.partialSig);
+    const combinedSignature = await sha256(honestSigs.join(""));
     const txid = genDemoTxid();
     setMpcQueue(prev => prev.map(b => b.bundleId === bundleId
-      ? { ...b, mpcStatus: "BROADCAST", combinedSignature, txid }
+      ? {
+          ...b,
+          mpcStatus: compromised.length > 0 ? "ATTACK_NEUTRALIZED" : "BROADCAST",
+          combinedSignature, txid,
+          attackDetails: compromised.length > 0
+            ? compromised.map(e => ({ node: e.node, fakeRoot: e.fakeRoot }))
+            : null,
+        }
       : b));
+  };
+
+  const handleNodeCompromise = (bundleId, nodeId) => {
+    const key = `${bundleId}::${nodeId}`;
+    setSigningPending(prev => { const s = new Set(prev); s.add(key); return s; });
+    setTimeout(() => {
+      const fakeRoot   = genDemoTxid();
+      const partialSig = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+        .map(b => b.toString(16).padStart(2, "0")).join("");
+      setMpcQueue(prev => prev.map(b => {
+        if (b.bundleId !== bundleId) return b;
+        const newLog = [...b.mpcSigningLog, {
+          node: nodeId, decision: "SIGNED", partialSig,
+          timestamp: Date.now(), isCompromised: true, fakeRoot,
+        }];
+        return { ...b, mpcSigningLog: newLog };
+      }));
+      setSigningPending(prev => { const s = new Set(prev); s.delete(key); return s; });
+    }, 800);
   };
 
   const handleSnapshot = async () => {
@@ -964,12 +993,13 @@ export default function App() {
       <svg viewBox="0 0 400 220" style={{ width: "100%", maxWidth: 400, display: "block", margin: "12px auto 0" }}>
         {MPC_NODE_POS.map((pos, i) => {
           const entry = log.find(e => e.node === MPC_NODES[i].id);
-          const lineColor = entry?.decision === "SIGNED" ? C.green
+          const lineColor = entry?.isCompromised ? C.amber
+                          : entry?.decision === "SIGNED" ? C.green
                           : entry?.decision === "REJECTED" ? C.red : C.borderHi;
           return (
             <line key={i} x1={pos.x} y1={pos.y} x2={CX} y2={CY}
-              stroke={lineColor} strokeWidth={1.5}
-              strokeDasharray={entry ? "none" : "5 3"} />
+              stroke={lineColor} strokeWidth={entry?.isCompromised ? 2 : 1.5}
+              strokeDasharray={entry ? (entry.isCompromised ? "6 2" : "none") : "5 3"} />
           );
         })}
         <circle cx={CX} cy={CY} r={22} fill={C.surf2} stroke={C.yellowBd} strokeWidth={1.5} />
@@ -979,19 +1009,27 @@ export default function App() {
           fontSize="7" fontFamily="Chakra Petch, monospace" fontWeight="600">ANCHOR</text>
         {MPC_NODE_POS.map((pos, i) => {
           const entry     = log.find(e => e.node === MPC_NODES[i].id);
-          const fill      = entry?.decision === "SIGNED" ? C.greenBg
+          const fill      = entry?.isCompromised ? C.amberBg
+                          : entry?.decision === "SIGNED" ? C.greenBg
                           : entry?.decision === "REJECTED" ? C.redBg : C.surf2;
-          const stroke    = entry?.decision === "SIGNED" ? C.green
+          const stroke    = entry?.isCompromised ? C.amber
+                          : entry?.decision === "SIGNED" ? C.green
                           : entry?.decision === "REJECTED" ? C.red : C.borderHi;
-          const textColor = entry?.decision === "SIGNED" ? C.green
+          const textColor = entry?.isCompromised ? C.amber
+                          : entry?.decision === "SIGNED" ? C.green
                           : entry?.decision === "REJECTED" ? C.red : C.dim;
           return (
             <g key={i}>
-              <circle cx={pos.x} cy={pos.y} r={20} fill={fill} stroke={stroke} strokeWidth={1.5} />
+              <circle cx={pos.x} cy={pos.y} r={20} fill={fill} stroke={stroke}
+                strokeWidth={entry?.isCompromised ? 2 : 1.5} />
               <text x={pos.x} y={pos.y + 4} textAnchor="middle" fill={textColor}
                 fontSize="6.5" fontFamily="Chakra Petch, monospace" fontWeight="600">
                 {pos.short}
               </text>
+              {entry?.isCompromised && (
+                <text x={pos.x} y={pos.y - 27} textAnchor="middle" fill={C.amber}
+                  fontSize="8" fontFamily="Chakra Petch, monospace">☠</text>
+              )}
             </g>
           );
         })}
@@ -1030,20 +1068,23 @@ export default function App() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {mpcQueue.map(bundle => {
-              const log       = bundle.mpcSigningLog;
-              const signed    = log.filter(e => e.decision === "SIGNED").length;
-              const rejected  = log.filter(e => e.decision === "REJECTED").length;
-              const THRESHOLD = 3;
-              const threshMet    = signed >= THRESHOLD;
-              const threshFailed = rejected >= THRESHOLD;
-              const canBroadcast = bundle.mpcStatus === "THRESHOLD_MET";
-              const isBroadcast  = bundle.mpcStatus === "BROADCAST";
-              const isFailed     = bundle.mpcStatus === "FAILED";
+              const log            = bundle.mpcSigningLog;
+              const honestSigned   = log.filter(e => e.decision === "SIGNED" && !e.isCompromised).length;
+              const compromisedCt  = log.filter(e => e.isCompromised).length;
+              const rejected       = log.filter(e => e.decision === "REJECTED").length;
+              const THRESHOLD      = 3;
+              const threshMet      = honestSigned >= THRESHOLD;
+              const threshFailed   = rejected >= THRESHOLD;
+              const canBroadcast   = bundle.mpcStatus === "THRESHOLD_MET";
+              const isBroadcast    = bundle.mpcStatus === "BROADCAST";
+              const isNeutralized  = bundle.mpcStatus === "ATTACK_NEUTRALIZED";
+              const isFailed       = bundle.mpcStatus === "FAILED";
 
               const statusColors = {
                 AWAITING_SIGNATURES: { c: C.amber,  bg: C.amberBg,  bd: C.amberBd  },
                 THRESHOLD_MET:       { c: C.green,  bg: C.greenBg,  bd: C.greenBd  },
                 BROADCAST:           { c: C.violet, bg: C.violetBg, bd: C.violetBd },
+                ATTACK_NEUTRALIZED:  { c: C.green,  bg: C.greenBg,  bd: C.greenBd  },
                 FAILED:              { c: C.red,    bg: C.redBg,    bd: C.redBd    },
               };
               const sc = statusColors[bundle.mpcStatus] || { c: C.muted, bg: C.surf2, bd: C.border };
@@ -1086,15 +1127,27 @@ export default function App() {
 
                   {/* Progress bar */}
                   <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontFamily: C.fontTactical, fontSize: 10, color: C.text,
-                      letterSpacing: "0.04em", marginBottom: 5 }}>
-                      {signed}/{MPC_NODES.length} signed · {rejected}/{MPC_NODES.length} rejected · need {THRESHOLD} to broadcast
+                    <div style={{ display: "flex", gap: 14, fontFamily: C.fontTactical, fontSize: 10,
+                      letterSpacing: "0.04em", marginBottom: 5, flexWrap: "wrap" }}>
+                      <span style={{ color: C.green }}>{honestSigned}/{MPC_NODES.length} honest</span>
+                      {compromisedCt > 0 && (
+                        <span style={{ color: C.amber }}>☠ {compromisedCt} compromised</span>
+                      )}
+                      <span style={{ color: C.red }}>{rejected} rejected</span>
+                      <span style={{ color: C.muted }}>· need {THRESHOLD} honest to broadcast</span>
                     </div>
                     <div style={{ height: 6, background: C.surf2, borderRadius: 3,
-                      border: `1px solid ${C.border}`, overflow: "hidden" }}>
+                      border: `1px solid ${C.border}`, overflow: "hidden", position: "relative" }}>
                       <div style={{ height: "100%", borderRadius: 3, transition: "width 400ms ease",
-                        width: `${(signed / MPC_NODES.length) * 100}%`,
-                        background: threshMet ? C.green : threshFailed ? C.red : C.amber }} />
+                        width: `${(honestSigned / MPC_NODES.length) * 100}%`,
+                        background: threshMet ? C.green : threshFailed ? C.red : C.green,
+                        position: "absolute", left: 0 }} />
+                      {compromisedCt > 0 && (
+                        <div style={{ height: "100%", borderRadius: 3, transition: "width 400ms ease",
+                          width: `${(compromisedCt / MPC_NODES.length) * 100}%`,
+                          background: C.amber, opacity: 0.7,
+                          position: "absolute", left: `${(honestSigned / MPC_NODES.length) * 100}%` }} />
+                      )}
                     </div>
                   </div>
 
@@ -1114,53 +1167,77 @@ export default function App() {
                   {/* Node cards grid */}
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6, marginBottom: 4 }}>
                     {MPC_NODES.map(node => {
-                      const entry      = log.find(e => e.node === node.id);
-                      const isSigned   = entry?.decision === "SIGNED";
-                      const isRejected = entry?.decision === "REJECTED";
-                      const isPending  = signingPending.has(`${bundle.bundleId}::${node.id}`);
-                      const disabled   = isPending || threshMet || threshFailed || !!entry;
-                      const nodeBg     = isSigned ? C.greenBg : isRejected ? C.redBg : C.surf2;
-                      const nodeBd     = isSigned ? C.greenBd : isRejected ? C.redBd : C.border;
-                      const nodeCol    = isSigned ? C.green   : isRejected ? C.red   : C.muted;
+                      const entry          = log.find(e => e.node === node.id);
+                      const isCompromised  = entry?.isCompromised;
+                      const isSigned       = entry?.decision === "SIGNED" && !isCompromised;
+                      const isRejected     = entry?.decision === "REJECTED";
+                      const isPending      = signingPending.has(`${bundle.bundleId}::${node.id}`);
+                      const disabled       = isPending || threshMet || threshFailed || !!entry;
+                      const nodeBg  = isCompromised ? C.amberBg : isSigned ? C.greenBg : isRejected ? C.redBg : C.surf2;
+                      const nodeBd  = isCompromised ? C.amberBd : isSigned ? C.greenBd : isRejected ? C.redBd : C.border;
+                      const nodeCol = isCompromised ? C.amber   : isSigned ? C.green   : isRejected ? C.red   : C.muted;
+                      const idCol   = isCompromised ? C.amber   : isSigned ? C.green   : isRejected ? C.red   : C.yellow;
                       return (
                         <div key={node.id} style={{ background: nodeBg, border: `1px solid ${nodeBd}`,
                           borderRadius: 4, padding: "8px 7px" }}>
                           <div style={{ fontFamily: C.fontTactical, fontSize: 8.5, fontWeight: 600,
-                            letterSpacing: "0.04em", marginBottom: 2,
-                            color: isSigned ? C.green : isRejected ? C.red : C.yellow }}>
-                            {node.id}
+                            letterSpacing: "0.04em", marginBottom: 2, color: idCol }}>
+                            {isCompromised ? "☠ " : ""}{node.id}
                           </div>
                           <div style={{ fontFamily: C.fontBody, fontSize: 9, color: C.muted,
                             lineHeight: 1.4, marginBottom: 5 }}>
                             {node.cmd}
                           </div>
                           <div style={{ fontFamily: C.fontTactical, fontSize: 9, fontWeight: 600,
-                            letterSpacing: "0.06em", color: nodeCol, marginBottom: isSigned ? 4 : 6 }}>
-                            {isPending ? "PROCESSING…" : isSigned ? "SIGNED" : isRejected ? "REJECTED" : "WAITING"}
+                            letterSpacing: "0.06em", color: nodeCol, marginBottom: 4 }}>
+                            {isPending ? "PROCESSING…" : isCompromised ? "COMPROMISED" : isSigned ? "SIGNED" : isRejected ? "REJECTED" : "WAITING"}
                           </div>
-                          {isSigned && entry.partialSig && (
+                          {isSigned && (
                             <div style={{ fontFamily: C.fontMono, fontSize: 7, color: C.green,
-                              wordBreak: "break-all", lineHeight: 1.4, marginBottom: 5 }}>
-                              {entry.partialSig.slice(0, 8)}…{entry.partialSig.slice(-8)}
+                              wordBreak: "break-all", lineHeight: 1.4, marginBottom: 4 }}>
+                              sig: {entry.partialSig.slice(0, 8)}…{entry.partialSig.slice(-8)}
                             </div>
                           )}
-                          {!entry && !isBroadcast && (
-                            <div style={{ display: "flex", gap: 3 }}>
+                          {isCompromised && (
+                            <div style={{ marginBottom: 4 }}>
+                              <div style={{ fontFamily: C.fontMono, fontSize: 6.5, color: C.amber,
+                                wordBreak: "break-all", lineHeight: 1.5 }}>
+                                fake: {entry.fakeRoot.slice(0, 10)}…
+                              </div>
+                              <div style={{ fontFamily: C.fontMono, fontSize: 6.5, color: C.muted,
+                                wordBreak: "break-all", lineHeight: 1.5 }}>
+                                real: {bundle.merkleRoot.slice(0, 10)}…
+                              </div>
+                            </div>
+                          )}
+                          {!entry && !isBroadcast && !isNeutralized && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                              <div style={{ display: "flex", gap: 3 }}>
+                                <button disabled={disabled}
+                                  onClick={() => handleNodeDecision(bundle.bundleId, node.id, "SIGNED")}
+                                  style={{ flex: 1, padding: "3px 0", fontSize: 10, borderRadius: 3,
+                                    border: `1px solid ${C.greenBd}`, background: C.greenBg, color: C.green,
+                                    cursor: disabled ? "not-allowed" : "pointer",
+                                    opacity: disabled ? 0.45 : 1, fontFamily: C.fontTactical }}>
+                                  {isPending ? "…" : "✅"}
+                                </button>
+                                <button disabled={disabled}
+                                  onClick={() => handleNodeDecision(bundle.bundleId, node.id, "REJECTED")}
+                                  style={{ flex: 1, padding: "3px 0", fontSize: 10, borderRadius: 3,
+                                    border: `1px solid ${C.redBd}`, background: C.redBg, color: C.red,
+                                    cursor: disabled ? "not-allowed" : "pointer",
+                                    opacity: disabled ? 0.45 : 1, fontFamily: C.fontTactical }}>
+                                  {isPending ? "…" : "❌"}
+                                </button>
+                              </div>
                               <button disabled={disabled}
-                                onClick={() => handleNodeDecision(bundle.bundleId, node.id, "SIGNED")}
-                                style={{ flex: 1, padding: "3px 0", fontSize: 10, borderRadius: 3,
-                                  border: `1px solid ${C.greenBd}`, background: C.greenBg, color: C.green,
+                                onClick={() => handleNodeCompromise(bundle.bundleId, node.id)}
+                                style={{ width: "100%", padding: "3px 0", fontSize: 9, borderRadius: 3,
+                                  border: `1px solid ${C.amberBd}`, background: C.amberBg, color: C.amber,
                                   cursor: disabled ? "not-allowed" : "pointer",
-                                  opacity: disabled ? 0.45 : 1, fontFamily: C.fontTactical }}>
-                                {isPending ? "…" : "✅"}
-                              </button>
-                              <button disabled={disabled}
-                                onClick={() => handleNodeDecision(bundle.bundleId, node.id, "REJECTED")}
-                                style={{ flex: 1, padding: "3px 0", fontSize: 10, borderRadius: 3,
-                                  border: `1px solid ${C.redBd}`, background: C.redBg, color: C.red,
-                                  cursor: disabled ? "not-allowed" : "pointer",
-                                  opacity: disabled ? 0.45 : 1, fontFamily: C.fontTactical }}>
-                                {isPending ? "…" : "❌"}
+                                  opacity: disabled ? 0.45 : 1, fontFamily: C.fontTactical,
+                                  fontWeight: 600, letterSpacing: "0.04em" }}>
+                                {isPending ? "…" : "☠ COMPROMISE"}
                               </button>
                             </div>
                           )}
@@ -1180,7 +1257,60 @@ export default function App() {
                     </button>
                   )}
 
-                  {/* Broadcast result */}
+                  {/* Attack neutralized result */}
+                  {isNeutralized && bundle.attackDetails && (
+                    <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div style={{ background: C.redBg, border: `1px solid ${C.redBd}`,
+                        borderRadius: 4, padding: "10px 12px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                          <AlertTriangle size={14} color={C.red} />
+                          <span style={{ fontFamily: C.fontTactical, fontSize: 11, fontWeight: 600,
+                            color: C.red, letterSpacing: "0.06em" }}>
+                            ATTACK DETECTED — ROOT HASH MISMATCH
+                          </span>
+                        </div>
+                        {bundle.attackDetails.map(a => (
+                          <div key={a.node} style={{ marginBottom: 6 }}>
+                            <div style={{ fontFamily: C.fontTactical, fontSize: 10, color: C.amber,
+                              fontWeight: 600, marginBottom: 4 }}>☠ {a.node} signed a different root:</div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 3,
+                              paddingLeft: 8, borderLeft: `2px solid ${C.amberBd}` }}>
+                              <div style={{ fontFamily: C.fontMono, fontSize: 7.5, lineHeight: 1.6 }}>
+                                <span style={{ color: C.muted }}>FAKE: </span>
+                                <span style={{ color: C.amber }}>{a.fakeRoot}</span>
+                              </div>
+                              <div style={{ fontFamily: C.fontMono, fontSize: 7.5, lineHeight: 1.6 }}>
+                                <span style={{ color: C.muted }}>REAL: </span>
+                                <span style={{ color: C.green }}>{bundle.merkleRoot}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ background: C.greenBg, border: `1px solid ${C.greenBd}`,
+                        borderRadius: 4, padding: "10px 12px" }}>
+                        <div style={{ fontFamily: C.fontTactical, fontSize: 11, fontWeight: 600,
+                          color: C.green, letterSpacing: "0.06em", marginBottom: 6 }}>
+                          ✅ ATTACK NEUTRALIZED — BROADCAST WITH HONEST SIGNATURES
+                        </div>
+                        <div style={{ fontFamily: C.fontBody, fontSize: 11, color: C.dim,
+                          lineHeight: 1.6, marginBottom: 8 }}>
+                          Compromised signature excluded. {honestSigned} honest nodes reached threshold.
+                          Single-node compromise yields nothing — attacker would need {3 - (compromisedCt >= 3 ? 3 : compromisedCt)} more nodes to forge an anchor.
+                        </div>
+                        <div style={{ fontFamily: C.fontMono, fontSize: 7.5, color: C.violet,
+                          wordBreak: "break-all", lineHeight: 1.6, marginBottom: 4 }}>
+                          txid: {bundle.txid}
+                        </div>
+                        <div style={{ fontFamily: C.fontMono, fontSize: 7.5, color: C.muted,
+                          wordBreak: "break-all", lineHeight: 1.6 }}>
+                          combined sig (honest only): {bundle.combinedSignature}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Clean broadcast result */}
                   {isBroadcast && (
                     <div style={{ marginTop: 12, background: C.violetBg,
                       border: `1px solid ${C.violetBd}`, borderRadius: 4, padding: "10px 12px" }}>
