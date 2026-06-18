@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  Camera, Anchor, Search, Radio, Download,
+  Camera, Anchor, Radio, Download,
   Pause, Play, AlertTriangle, ChevronDown, ChevronUp,
   Activity, ShieldCheck, ShieldAlert, Cpu, Globe,
   RefreshCw, RotateCcw, CheckCircle2,
@@ -281,43 +281,52 @@ export default function App() {
     const result = await broadcastToTestnet(bundle.merkleRoot);
     if (result.success) {
       setSnapshots(prev => prev.map(s => s.snapshotId === bundle.snapshotId
-        ? { ...s, status: "pending_confirmation", txid: result.txid, txUrl: result.url, isDemo: false }
+        ? { ...s, status: "pending_confirmation", txid: result.txid, txUrl: result.url, isDemo: false, anchoredAt: Date.now() }
         : s));
     } else {
       const demoTxid = genDemoTxid();
       setSnapshots(prev => prev.map(s => s.snapshotId === bundle.snapshotId
         ? { ...s, status: "pending_confirmation", txid: demoTxid,
             txUrl: `https://blockstream.info/testnet/tx/${demoTxid}`,
-            isDemo: true, verifyNote: result.msg }
+            isDemo: true, verifyNote: result.msg, anchoredAt: Date.now() }
         : s));
     }
   };
 
-  const handleVerify = async (bundle) => {
-    setSnapshots(prev => prev.map(s => s.snapshotId === bundle.snapshotId ? { ...s, status: "verifying" } : s));
-    if (bundle.isDemo) {
-      setSnapshots(prev => prev.map(s => s.snapshotId === bundle.snapshotId
-        ? { ...s, status: "demo_confirmed", verifyNote: "Simulated — no real on-chain transaction." }
-        : s));
-      return;
-    }
-    try {
-      const res = await fetch(`https://blockstream.info/testnet/api/tx/${bundle.txid}`);
-      if (res.ok) {
-        setSnapshots(prev => prev.map(s => s.snapshotId === bundle.snapshotId
-          ? { ...s, status: "blockchain_confirmed", verifyNote: null }
-          : s));
-      } else {
-        setSnapshots(prev => prev.map(s => s.snapshotId === bundle.snapshotId
-          ? { ...s, status: "pending_confirmation", verifyNote: "Not yet confirmed — retry in a moment." }
-          : s));
-      }
-    } catch {
-      setSnapshots(prev => prev.map(s => s.snapshotId === bundle.snapshotId
-        ? { ...s, status: "pending_confirmation", verifyNote: "Network error — check connection." }
-        : s));
-    }
-  };
+  // Auto-poll bundles waiting for ≥1 confirmation
+  useEffect(() => {
+    const hasPending = snapshots.some(s => s.status === "pending_confirmation");
+    if (!hasPending) return;
+    const interval = setInterval(async () => {
+      setSnapshots(prev => {
+        const toCheck = prev.filter(s => s.status === "pending_confirmation");
+        if (!toCheck.length) return prev;
+        toCheck.forEach(async bundle => {
+          if (bundle.isDemo) {
+            if (Date.now() - (bundle.anchoredAt || 0) >= 5000) {
+              setSnapshots(p => p.map(s => s.snapshotId === bundle.snapshotId
+                ? { ...s, status: "demo_confirmed", verifyNote: "Simulated — no real on-chain transaction." }
+                : s));
+            }
+          } else {
+            try {
+              const res = await fetch(`https://blockstream.info/testnet/api/tx/${bundle.txid}/status`);
+              if (res.ok) {
+                const data = await res.json();
+                if (data.confirmed) {
+                  setSnapshots(p => p.map(s => s.snapshotId === bundle.snapshotId
+                    ? { ...s, status: "blockchain_confirmed", verifyNote: null }
+                    : s));
+                }
+              }
+            } catch { /* retry next tick */ }
+          }
+        });
+        return prev;
+      });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [snapshots]);
 
   const handleSendBundle = (bundle) => {
     setTransmittedBundles(prev =>
@@ -543,10 +552,12 @@ export default function App() {
                     </button>
                   )}
                   {canVerify && (
-                    <button onClick={() => handleVerify(bundle)}
-                      style={btnGhost(C.amber, C.amberBg, C.amberBd)}>
-                      <Search size={12} />Verify on Blockstream
-                    </button>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 0" }}>
+                      <RefreshCw size={11} color={C.green} style={{ flexShrink: 0, animation: "spin 1.5s linear infinite" }} />
+                      <span style={{ fontFamily: C.fontTactical, fontSize: 10, color: C.green, letterSpacing: "0.06em" }}>
+                        POLLING FOR CONFIRMATION…
+                      </span>
+                    </div>
                   )}
                   {canSend && (
                     <button onClick={() => handleSendBundle(bundle)}

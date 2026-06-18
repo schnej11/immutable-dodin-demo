@@ -170,6 +170,11 @@
   --vx-dur-slow:   360ms; /* @kind other */
 }
 
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 /* ===== Dark theme overrides ====================================== */
 :root[data-theme="dark"],
 .vx-dark {
