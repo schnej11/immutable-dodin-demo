@@ -214,37 +214,37 @@ export default function App() {
     setAnchorLoading(false);
   };
 
-  const hasTamper       = events.some(e => e.tampered);
-  const tamperedEvents  = events.filter(e => e.tampered);
-  const tamperedEps     = new Set(tamperedEvents.map(e => e.endpoint));
+  const hasTamper      = events.some(e => e.tampered);
+  const tamperedEvents = events.filter(e => e.tampered);
+  const tamperedEps    = new Set(tamperedEvents.map(e => e.endpoint));
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div style={{ fontFamily: "'Inter','Segoe UI',system-ui,sans-serif", background: C.bg, color: C.text, minHeight: "100vh", fontSize: 13 }}>
+    <div style={{ fontFamily: "'Inter','Segoe UI',system-ui,sans-serif", background: C.bg, color: C.text, minHeight: "100vh", fontSize: 14 }}>
 
       {/* ── Header ── */}
-      <div style={{ background: C.surf, borderBottom: `1px solid ${C.border}`, padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+      <div style={{ background: C.surf, borderBottom: `1px solid ${C.border}`, padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <span style={{ background: C.amberBg, border: `1px solid ${C.amberBd}`, color: C.amber, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 2, letterSpacing: "0.1em", fontFamily: C.mono }}>
+          <span style={{ background: C.amberBg, border: `1px solid ${C.amberBd}`, color: C.amber, fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 2, letterSpacing: "0.1em", fontFamily: C.mono }}>
             UNCLASSIFIED // DEMO
           </span>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+            <div style={{ fontSize: 17, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>
               Immutable DoDIN — Federated Merkle Audit
             </div>
-            <div style={{ fontSize: 10, color: C.dim, marginTop: 1, letterSpacing: "0.03em" }}>
+            <div style={{ fontSize: 12, color: C.dim, marginTop: 2, letterSpacing: "0.03em" }}>
               Hierarchical Merkle Tree &nbsp;·&nbsp; Bitcoin Testnet Anchor
             </div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ width: 7, height: 7, borderRadius: "50%", background: isRunning ? C.green : C.amber, boxShadow: `0 0 7px ${isRunning ? C.green : C.amber}`, display: "inline-block" }} />
-            <span style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: isRunning ? C.green : C.amber, letterSpacing: "0.08em" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: isRunning ? C.green : C.amber, boxShadow: `0 0 8px ${isRunning ? C.green : C.amber}`, display: "inline-block" }} />
+            <span style={{ fontFamily: C.mono, fontSize: 12, fontWeight: 700, color: isRunning ? C.green : C.amber, letterSpacing: "0.08em" }}>
               {isRunning ? "LIVE" : "PAUSED"}
             </span>
           </div>
-          <button onClick={() => setIsRunning(r => !r)} style={{ padding: "5px 14px", borderRadius: 4, border: `1px solid ${C.borderHi}`, background: C.surf2, color: C.text, cursor: "pointer", fontSize: 12, fontWeight: 500 }}>
+          <button onClick={() => setIsRunning(r => !r)} style={{ padding: "6px 16px", borderRadius: 4, border: `1px solid ${C.borderHi}`, background: C.surf2, color: C.text, cursor: "pointer", fontSize: 13, fontWeight: 500 }}>
             {isRunning ? "⏸ Pause" : "▶ Resume"}
           </button>
         </div>
@@ -252,14 +252,14 @@ export default function App() {
 
       {/* ── Tamper Alert ── */}
       {tamperAlert && (
-        <div style={{ background: C.redBg, borderBottom: `1px solid ${C.redBd}`, borderLeft: `4px solid ${C.red}`, padding: "10px 20px", display: "flex", gap: 12, alignItems: "flex-start" }}>
-          <span style={{ fontSize: 18 }}>🚨</span>
+        <div style={{ background: C.redBg, borderBottom: `1px solid ${C.redBd}`, borderLeft: `4px solid ${C.red}`, padding: "12px 20px", display: "flex", gap: 12, alignItems: "flex-start" }}>
+          <span style={{ fontSize: 22 }}>🚨</span>
           <div>
-            <div style={{ fontWeight: 700, color: C.red, fontSize: 12, letterSpacing: "0.08em" }}>INTEGRITY VIOLATION DETECTED — ENDPOINT QUARANTINED</div>
-            <div style={{ fontSize: 11, color: C.red, opacity: 0.85, marginTop: 3 }}>
+            <div style={{ fontWeight: 700, color: C.red, fontSize: 15, letterSpacing: "0.06em" }}>INTEGRITY VIOLATION DETECTED — ENDPOINT QUARANTINED</div>
+            <div style={{ fontSize: 13, color: C.red, opacity: 0.9, marginTop: 4 }}>
               Endpoint: <strong>{tamperAlert.endpoint}</strong> &nbsp;·&nbsp; File: <span style={{ fontFamily: C.mono }}>{tamperAlert.file}</span>
             </div>
-            <div style={{ fontFamily: C.mono, fontSize: 9, color: C.red, opacity: 0.7, marginTop: 4, lineHeight: 1.8 }}>
+            <div style={{ fontFamily: C.mono, fontSize: 9, color: C.red, opacity: 0.7, marginTop: 5, lineHeight: 1.8 }}>
               PREV: {tamperAlert.oldRoot}<br />
               NOW:  {tamperAlert.newRoot}
             </div>
@@ -273,16 +273,16 @@ export default function App() {
         <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
 
           {/* Merkle hierarchy */}
-          <div style={{ width: 270, flexShrink: 0, background: C.surf, border: `1px solid ${C.border}`, borderRadius: 6, padding: "12px 14px" }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: C.dim, textTransform: "uppercase", borderBottom: `1px solid ${C.border}`, paddingBottom: 6, marginBottom: 12 }}>
+          <div style={{ width: 290, flexShrink: 0, background: C.surf, border: `1px solid ${C.border}`, borderRadius: 6, padding: "12px 14px" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: C.dim, textTransform: "uppercase", borderBottom: `1px solid ${C.border}`, paddingBottom: 7, marginBottom: 12 }}>
               Merkle Hierarchy
             </div>
 
             {/* T4 */}
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 8, color: C.dim, letterSpacing: "0.1em", marginBottom: 5, textTransform: "uppercase" }}>Tier 4 — Global Anchor</div>
-              <div style={{ background: globalRoot ? (hasTamper ? C.redBg : C.greenBg) : C.surf2, border: `1px solid ${globalRoot ? (hasTamper ? C.redBd : C.greenBd) : C.border}`, borderRadius: 4, padding: "8px 10px" }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: hasTamper ? C.red : C.green, marginBottom: 5, letterSpacing: "0.06em" }}>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 10, color: C.dim, letterSpacing: "0.08em", marginBottom: 6, textTransform: "uppercase" }}>Tier 4 — Global Anchor</div>
+              <div style={{ background: globalRoot ? (hasTamper ? C.redBg : C.greenBg) : C.surf2, border: `1px solid ${globalRoot ? (hasTamper ? C.redBd : C.greenBd) : C.border}`, borderRadius: 4, padding: "10px 11px" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: hasTamper ? C.red : C.green, marginBottom: 6, letterSpacing: "0.05em" }}>
                   {hasTamper ? "⚠  INTEGRITY FAIL" : "●  INTEGRITY OK"}
                 </div>
                 <div style={{ fontFamily: C.mono, fontSize: 8, color: hasTamper ? C.red : C.green, wordBreak: "break-all", lineHeight: 1.6 }}>
@@ -292,12 +292,12 @@ export default function App() {
             </div>
 
             {/* T3 */}
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 8, color: C.dim, letterSpacing: "0.1em", marginBottom: 5, textTransform: "uppercase" }}>Tier 3 — Regional Commands</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 10, color: C.dim, letterSpacing: "0.08em", marginBottom: 6, textTransform: "uppercase" }}>Tier 3 — Regional Commands</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {REGIONS.map(reg => (
-                  <div key={reg} style={{ background: C.surf2, border: `1px solid ${C.border}`, borderRadius: 4, padding: "6px 8px" }}>
-                    <div style={{ fontSize: 9, color: C.blue, fontWeight: 600, marginBottom: 3 }}>{reg}</div>
+                  <div key={reg} style={{ background: C.surf2, border: `1px solid ${C.border}`, borderRadius: 4, padding: "7px 9px" }}>
+                    <div style={{ fontSize: 13, color: C.blue, fontWeight: 600, marginBottom: 4 }}>{reg}</div>
                     <div style={{ fontFamily: C.mono, fontSize: 8, color: C.dim, wordBreak: "break-all", lineHeight: 1.6 }}>
                       {regionRoots[reg] || "—"}
                     </div>
@@ -308,11 +308,11 @@ export default function App() {
 
             {/* T2 */}
             <div>
-              <div style={{ fontSize: 8, color: C.dim, letterSpacing: "0.1em", marginBottom: 5, textTransform: "uppercase" }}>Tier 2 — Installations</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              <div style={{ fontSize: 10, color: C.dim, letterSpacing: "0.08em", marginBottom: 6, textTransform: "uppercase" }}>Tier 2 — Installations</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {BASES.map(base => (
-                  <div key={base} style={{ background: C.surf2, border: `1px solid ${C.border}`, borderRadius: 4, padding: "6px 8px" }}>
-                    <div style={{ fontSize: 9, color: C.dim, fontWeight: 600, marginBottom: 3 }}>{base}</div>
+                  <div key={base} style={{ background: C.surf2, border: `1px solid ${C.border}`, borderRadius: 4, padding: "7px 9px" }}>
+                    <div style={{ fontSize: 12, color: C.dim, fontWeight: 600, marginBottom: 4 }}>{base}</div>
                     <div style={{ fontFamily: C.mono, fontSize: 8, color: C.muted, wordBreak: "break-all", lineHeight: 1.6 }}>
                       {baseRoots[base] || "—"}
                     </div>
@@ -324,30 +324,30 @@ export default function App() {
 
           {/* Live events */}
           <div style={{ flex: 1, minWidth: 0, background: C.surf, border: `1px solid ${C.border}`, borderRadius: 6, padding: "12px 14px" }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: C.dim, textTransform: "uppercase", borderBottom: `1px solid ${C.border}`, paddingBottom: 6, marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: C.dim, textTransform: "uppercase", borderBottom: `1px solid ${C.border}`, paddingBottom: 7, marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
               <span>Live Events Feed</span>
               <span style={{ color: C.muted, fontFamily: C.mono }}>{events.length} total</span>
             </div>
-            <div style={{ height: 440, overflowY: "auto", display: "flex", flexDirection: "column", gap: 3 }}>
+            <div style={{ height: 460, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
               {events.slice(0, 50).map((e, i) => (
-                <div key={e.id} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "6px 8px", borderRadius: 4, background: e.tampered ? C.redBg : C.surf2, border: `1px solid ${e.tampered ? C.redBd : C.border}` }}>
-                  <span style={{ fontSize: 13, lineHeight: 1.5, flexShrink: 0 }}>{e.icon}</span>
+                <div key={e.id} style={{ display: "flex", alignItems: "flex-start", gap: 9, padding: "7px 9px", borderRadius: 4, background: e.tampered ? C.redBg : C.surf2, border: `1px solid ${e.tampered ? C.redBd : C.border}` }}>
+                  <span style={{ fontSize: 15, lineHeight: 1.5, flexShrink: 0 }}>{e.icon}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                      <span style={{ fontFamily: C.mono, fontSize: 10, color: C.blue, fontWeight: 600 }}>{e.endpoint}</span>
-                      <span style={{ fontFamily: C.mono, fontSize: 9, color: C.muted, flexShrink: 0 }}>{fmtTime(e.timestamp)}</span>
+                      <span style={{ fontFamily: C.mono, fontSize: 12, color: C.blue, fontWeight: 700 }}>{e.endpoint}</span>
+                      <span style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, flexShrink: 0 }}>{fmtTime(e.timestamp)}</span>
                     </div>
-                    <div style={{ fontSize: 11, color: e.tampered ? C.red : C.text, marginTop: 1 }}>
+                    <div style={{ fontSize: 13, color: e.tampered ? C.red : C.text, marginTop: 2, fontWeight: e.tampered ? 600 : 400 }}>
                       {e.label}
                       {e.tampered && <span style={{ fontWeight: 700, marginLeft: 6, letterSpacing: "0.04em" }}>[TAMPERED]</span>}
                     </div>
-                    <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, marginTop: 1 }}>{e.file}</div>
+                    <div style={{ fontFamily: C.mono, fontSize: 11, color: C.dim, marginTop: 2 }}>{e.file}</div>
                     <div style={{ fontFamily: C.mono, fontSize: 8, color: C.muted, marginTop: 2, wordBreak: "break-all", lineHeight: 1.5 }}>
                       {eventHashes[i] || "hashing…"}
                     </div>
                   </div>
                   {!e.tampered && (
-                    <button onClick={() => tamperEvent(e.id)} style={{ padding: "2px 8px", fontSize: 9, borderRadius: 3, border: `1px solid ${C.redBd}`, background: C.redBg, color: C.red, cursor: "pointer", flexShrink: 0, fontFamily: C.mono, fontWeight: 700, letterSpacing: "0.04em" }}>
+                    <button onClick={() => tamperEvent(e.id)} style={{ padding: "3px 9px", fontSize: 11, borderRadius: 3, border: `1px solid ${C.redBd}`, background: C.redBg, color: C.red, cursor: "pointer", flexShrink: 0, fontFamily: C.mono, fontWeight: 700, letterSpacing: "0.04em" }}>
                       TAMPER
                     </button>
                   )}
@@ -357,31 +357,31 @@ export default function App() {
           </div>
 
           {/* Tampered events */}
-          <div style={{ width: 255, flexShrink: 0, background: C.surf, border: `1px solid ${tamperedEvents.length ? C.redBd : C.border}`, borderRadius: 6, padding: "12px 14px" }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: tamperedEvents.length ? C.red : C.dim, textTransform: "uppercase", borderBottom: `1px solid ${tamperedEvents.length ? C.redBd : C.border}`, paddingBottom: 6, marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ width: 270, flexShrink: 0, background: C.surf, border: `1px solid ${tamperedEvents.length ? C.redBd : C.border}`, borderRadius: 6, padding: "12px 14px" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: tamperedEvents.length ? C.red : C.dim, textTransform: "uppercase", borderBottom: `1px solid ${tamperedEvents.length ? C.redBd : C.border}`, paddingBottom: 7, marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>Tampered Events</span>
               {tamperedEvents.length > 0 && (
-                <span style={{ background: C.redBg, border: `1px solid ${C.redBd}`, color: C.red, fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 3, fontFamily: C.mono }}>
+                <span style={{ background: C.redBg, border: `1px solid ${C.redBd}`, color: C.red, fontSize: 12, fontWeight: 700, padding: "1px 8px", borderRadius: 3, fontFamily: C.mono }}>
                   {tamperedEvents.length}
                 </span>
               )}
             </div>
             {tamperedEvents.length === 0 ? (
-              <div style={{ textAlign: "center", color: C.dim, fontSize: 11, padding: "60px 0" }}>
-                <div style={{ fontSize: 28, marginBottom: 8, opacity: 0.4 }}>✓</div>
+              <div style={{ textAlign: "center", color: C.dim, fontSize: 13, padding: "60px 0" }}>
+                <div style={{ fontSize: 30, marginBottom: 10, opacity: 0.4 }}>✓</div>
                 No integrity violations
               </div>
             ) : (
-              <div style={{ height: 440, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ height: 460, overflowY: "auto", display: "flex", flexDirection: "column", gap: 7 }}>
                 {tamperedEvents.map(e => (
-                  <div key={e.id} style={{ background: C.redBg, border: `1px solid ${C.redBd}`, borderRadius: 4, padding: "9px 10px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
-                      <span style={{ fontFamily: C.mono, fontSize: 10, color: C.red, fontWeight: 700 }}>{e.endpoint}</span>
-                      <span style={{ fontFamily: C.mono, fontSize: 9, color: C.dim }}>{fmtTime(e.timestamp)}</span>
+                  <div key={e.id} style={{ background: C.redBg, border: `1px solid ${C.redBd}`, borderRadius: 4, padding: "10px 11px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <span style={{ fontFamily: C.mono, fontSize: 13, color: C.red, fontWeight: 700 }}>{e.endpoint}</span>
+                      <span style={{ fontFamily: C.mono, fontSize: 10, color: C.dim }}>{fmtTime(e.timestamp)}</span>
                     </div>
-                    <div style={{ fontSize: 10, color: C.red, marginBottom: 2 }}>{e.label}</div>
-                    <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, marginBottom: 7 }}>{e.file}</div>
-                    <button onClick={() => restoreEvent(e.id)} style={{ width: "100%", padding: "5px 0", fontSize: 10, borderRadius: 3, border: `1px solid ${C.greenBd}`, background: C.greenBg, color: C.green, cursor: "pointer", fontWeight: 700, fontFamily: C.mono, letterSpacing: "0.06em" }}>
+                    <div style={{ fontSize: 12, color: C.red, marginBottom: 3 }}>{e.label}</div>
+                    <div style={{ fontFamily: C.mono, fontSize: 11, color: C.dim, marginBottom: 8 }}>{e.file}</div>
+                    <button onClick={() => restoreEvent(e.id)} style={{ width: "100%", padding: "6px 0", fontSize: 12, borderRadius: 3, border: `1px solid ${C.greenBd}`, background: C.greenBg, color: C.green, cursor: "pointer", fontWeight: 700, fontFamily: C.mono, letterSpacing: "0.05em" }}>
                       ↩ RESTORE INTEGRITY
                     </button>
                   </div>
@@ -394,33 +394,33 @@ export default function App() {
 
         {/* ── Row 2: Tier 1 Endpoints ── */}
         <div style={{ background: C.surf, border: `1px solid ${C.border}`, borderRadius: 6, padding: "12px 14px" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: C.dim, textTransform: "uppercase", borderBottom: `1px solid ${C.border}`, paddingBottom: 6, marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: C.dim, textTransform: "uppercase", borderBottom: `1px solid ${C.border}`, paddingBottom: 7, marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
             <span>Tier 1 — Endpoint Nodes</span>
             <span style={{ color: C.muted, fontFamily: C.mono }}>{Object.keys(endpointRoots).length} / {ENDPOINTS.length} active</span>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 9 }}>
             {ENDPOINTS.map(ep => {
               const isTampered = tamperedEps.has(ep);
               const root       = endpointRoots[ep];
               const epEvents   = events.filter(e => e.endpoint === ep);
               const last       = epEvents[0];
               return (
-                <div key={ep} style={{ background: isTampered ? C.redBg : C.surf2, border: `1px solid ${isTampered ? C.redBd : C.border}`, borderRadius: 4, padding: "9px 11px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-                    <span style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: isTampered ? C.red : C.blue }}>{ep}</span>
-                    <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 5px", borderRadius: 2, fontFamily: C.mono, letterSpacing: "0.05em", background: isTampered ? C.redBd : C.greenBg, color: isTampered ? C.red : C.green, border: `1px solid ${isTampered ? C.red : C.greenBd}` }}>
+                <div key={ep} style={{ background: isTampered ? C.redBg : C.surf2, border: `1px solid ${isTampered ? C.redBd : C.border}`, borderRadius: 4, padding: "10px 12px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <span style={{ fontFamily: C.mono, fontSize: 13, fontWeight: 700, color: isTampered ? C.red : C.blue }}>{ep}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 2, fontFamily: C.mono, letterSpacing: "0.05em", background: isTampered ? C.redBd : C.greenBg, color: isTampered ? C.red : C.green, border: `1px solid ${isTampered ? C.red : C.greenBd}` }}>
                       {isTampered ? "TAMPERED" : root ? "CLEAN" : "IDLE"}
                     </span>
                   </div>
                   {last && (
-                    <div style={{ fontSize: 9, color: C.dim, marginBottom: 5 }}>
+                    <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>
                       {last.icon} {last.label} &nbsp;·&nbsp; <span style={{ fontFamily: C.mono }}>{fmtTime(last.timestamp)}</span>
                     </div>
                   )}
                   <div style={{ fontFamily: C.mono, fontSize: 8, color: isTampered ? C.redBd : C.muted, wordBreak: "break-all", lineHeight: 1.6 }}>
                     {root || "no data"}
                   </div>
-                  <div style={{ fontSize: 8, color: C.muted, marginTop: 4 }}>{epEvents.length} events</div>
+                  <div style={{ fontSize: 10, color: C.muted, marginTop: 5 }}>{epEvents.length} events</div>
                 </div>
               );
             })}
@@ -429,41 +429,39 @@ export default function App() {
 
         {/* ── Row 3: Blockchain Anchor ── */}
         <div style={{ background: C.surf, border: `1px solid ${C.border}`, borderRadius: 6, padding: "12px 14px" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: C.dim, textTransform: "uppercase", borderBottom: `1px solid ${C.border}`, paddingBottom: 6, marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: C.dim, textTransform: "uppercase", borderBottom: `1px solid ${C.border}`, paddingBottom: 7, marginBottom: 12 }}>
             Blockchain Anchor — Bitcoin Testnet
           </div>
           <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
 
-            {/* Current root */}
             <div style={{ flex: 1, minWidth: 320 }}>
-              <div style={{ fontSize: 9, color: C.dim, letterSpacing: "0.08em", marginBottom: 6, textTransform: "uppercase" }}>Current Global Root (OP_RETURN payload)</div>
-              <div style={{ fontFamily: C.mono, fontSize: 12, wordBreak: "break-all", padding: "10px 12px", background: C.surf2, borderRadius: 4, border: `1px solid ${C.border}`, color: hasTamper ? C.red : C.green, lineHeight: 1.7 }}>
+              <div style={{ fontSize: 11, color: C.dim, letterSpacing: "0.06em", marginBottom: 7, textTransform: "uppercase" }}>Current Global Root (OP_RETURN payload)</div>
+              <div style={{ fontFamily: C.mono, fontSize: 12, wordBreak: "break-all", padding: "11px 13px", background: C.surf2, borderRadius: 4, border: `1px solid ${C.border}`, color: hasTamper ? C.red : C.green, lineHeight: 1.7 }}>
                 {globalRoot || "Waiting for events…"}
               </div>
-              <div style={{ fontSize: 10, color: C.dim, marginTop: 6 }}>
+              <div style={{ fontSize: 11, color: C.dim, marginTop: 7 }}>
                 {events.length} events &nbsp;·&nbsp; {Object.keys(endpointRoots).length} endpoints &nbsp;·&nbsp; {Object.keys(baseRoots).length} bases &nbsp;·&nbsp; {Object.keys(regionRoots).length} regions
                 {lastAnchorTime && <span> &nbsp;·&nbsp; last anchored {fmtTime(lastAnchorTime)}</span>}
               </div>
             </div>
 
-            {/* Controls */}
-            <div style={{ minWidth: 240 }}>
-              <button onClick={handleAnchor} disabled={!globalRoot || anchorLoading} style={{ width: "100%", padding: "9px 0", borderRadius: 4, border: `1px solid ${C.blueBd}`, background: C.blueBg, color: globalRoot && !anchorLoading ? C.blue : C.dim, cursor: globalRoot && !anchorLoading ? "pointer" : "not-allowed", fontSize: 12, fontWeight: 700, fontFamily: C.mono, letterSpacing: "0.06em", marginBottom: 6 }}>
+            <div style={{ minWidth: 250 }}>
+              <button onClick={handleAnchor} disabled={!globalRoot || anchorLoading} style={{ width: "100%", padding: "10px 0", borderRadius: 4, border: `1px solid ${C.blueBd}`, background: C.blueBg, color: globalRoot && !anchorLoading ? C.blue : C.dim, cursor: globalRoot && !anchorLoading ? "pointer" : "not-allowed", fontSize: 14, fontWeight: 700, fontFamily: C.mono, letterSpacing: "0.05em", marginBottom: 7 }}>
                 {anchorLoading ? "BROADCASTING…" : "⚓  ANCHOR TO TESTNET"}
               </button>
-              <div style={{ fontSize: 9, color: C.dim, marginBottom: 10 }}>Auto-anchors every 30 s &nbsp;·&nbsp; Production: 5 min</div>
+              <div style={{ fontSize: 11, color: C.dim, marginBottom: 12 }}>Auto-anchors every 30 s &nbsp;·&nbsp; Production: 5 min</div>
 
               {broadcastStatus && (
-                <div style={{ background: broadcastStatus.status === "confirmed" ? C.greenBg : C.redBg, border: `1px solid ${broadcastStatus.status === "confirmed" ? C.greenBd : C.redBd}`, borderRadius: 4, padding: "8px 10px", marginBottom: 10 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: broadcastStatus.status === "confirmed" ? C.green : C.red, marginBottom: 4 }}>
+                <div style={{ background: broadcastStatus.status === "confirmed" ? C.greenBg : C.redBg, border: `1px solid ${broadcastStatus.status === "confirmed" ? C.greenBd : C.redBd}`, borderRadius: 4, padding: "9px 11px", marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: broadcastStatus.status === "confirmed" ? C.green : C.red, marginBottom: 5 }}>
                     {broadcastStatus.status === "confirmed" ? "✅  CONFIRMED" : "❌  FAILED"}
                   </div>
-                  {broadcastStatus.msg && <div style={{ fontSize: 10, color: C.dim, marginBottom: 4 }}>{broadcastStatus.msg}</div>}
+                  {broadcastStatus.msg && <div style={{ fontSize: 11, color: C.dim, marginBottom: 5 }}>{broadcastStatus.msg}</div>}
                   {broadcastStatus.txid && (
                     <>
-                      <div style={{ fontSize: 8, color: C.dim, marginBottom: 2, letterSpacing: "0.08em" }}>TXID</div>
-                      <div style={{ fontFamily: C.mono, fontSize: 9, color: C.blue, wordBreak: "break-all", marginBottom: 5, lineHeight: 1.6 }}>{broadcastStatus.txid}</div>
-                      <a href={broadcastStatus.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: C.blue }}>View on Blockstream ↗</a>
+                      <div style={{ fontSize: 10, color: C.dim, marginBottom: 2, letterSpacing: "0.06em" }}>TXID</div>
+                      <div style={{ fontFamily: C.mono, fontSize: 9, color: C.blue, wordBreak: "break-all", marginBottom: 6, lineHeight: 1.6 }}>{broadcastStatus.txid}</div>
+                      <a href={broadcastStatus.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: C.blue }}>View on Blockstream ↗</a>
                     </>
                   )}
                 </div>
@@ -471,18 +469,18 @@ export default function App() {
 
               {anchorHistory.length > 0 && (
                 <div>
-                  <div style={{ fontSize: 8, color: C.muted, marginBottom: 4, letterSpacing: "0.1em", textTransform: "uppercase" }}>Anchor History</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                  <div style={{ fontSize: 10, color: C.muted, marginBottom: 5, letterSpacing: "0.08em", textTransform: "uppercase" }}>Anchor History</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     {anchorHistory.slice(0, 6).map((a, i) => (
-                      <div key={i} style={{ display: "flex", gap: 6, alignItems: "flex-start", padding: "5px 8px", background: C.surf2, border: `1px solid ${C.border}`, borderRadius: 3 }}>
+                      <div key={i} style={{ display: "flex", gap: 7, alignItems: "flex-start", padding: "6px 9px", background: C.surf2, border: `1px solid ${C.border}`, borderRadius: 3 }}>
                         <span style={{ flexShrink: 0, marginTop: 1 }}>
                           {a.status === "confirmed" ? "✅" : a.status === "pending" ? "⏳" : "❌"}
                         </span>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontFamily: C.mono, fontSize: 8, color: C.dim }}>{fmtTime(a.ts)} &nbsp;·&nbsp; {a.events} events</div>
+                          <div style={{ fontFamily: C.mono, fontSize: 10, color: C.dim }}>{fmtTime(a.ts)} &nbsp;·&nbsp; {a.events} events</div>
                           <div style={{ fontFamily: C.mono, fontSize: 8, color: C.muted, wordBreak: "break-all", lineHeight: 1.6 }}>{a.root}</div>
                           {a.txid && (
-                            <a href={`https://blockstream.info/testnet/tx/${a.txid}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 8, color: C.blue }}>
+                            <a href={`https://blockstream.info/testnet/tx/${a.txid}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 9, color: C.blue }}>
                               {a.txid}
                             </a>
                           )}
@@ -499,17 +497,17 @@ export default function App() {
         {/* ── Footer stats ── */}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {[
-            ["Events Hashed",   events.length,                              false],
-            ["Endpoints",       Object.keys(endpointRoots).length,          false],
-            ["Installations",   Object.keys(baseRoots).length,              false],
-            ["Regions",         Object.keys(regionRoots).length,            false],
-            ["Anchors",         anchorHistory.length,                       false],
-            ["Tampered",        tamperedEvents.length,                      tamperedEvents.length > 0],
-            ["Chain Cost",      "32 B / 5 MIN",                             false],
+            ["Events Hashed", events.length,                             false],
+            ["Endpoints",     Object.keys(endpointRoots).length,         false],
+            ["Installations", Object.keys(baseRoots).length,             false],
+            ["Regions",       Object.keys(regionRoots).length,           false],
+            ["Anchors",       anchorHistory.length,                      false],
+            ["Tampered",      tamperedEvents.length,                     tamperedEvents.length > 0],
+            ["Chain Cost",    "32 B / 5 MIN",                            false],
           ].map(([label, val, alert]) => (
-            <div key={label} style={{ flex: 1, minWidth: 85, background: C.surf, border: `1px solid ${alert ? C.redBd : C.border}`, borderRadius: 4, padding: "8px 12px" }}>
-              <div style={{ fontSize: 8, color: C.dim, marginBottom: 4, letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</div>
-              <div style={{ fontSize: 17, fontWeight: 600, fontFamily: C.mono, color: alert ? C.red : C.text }}>{val}</div>
+            <div key={label} style={{ flex: 1, minWidth: 90, background: C.surf, border: `1px solid ${alert ? C.redBd : C.border}`, borderRadius: 4, padding: "10px 13px" }}>
+              <div style={{ fontSize: 11, color: C.dim, marginBottom: 5, letterSpacing: "0.08em", textTransform: "uppercase" }}>{label}</div>
+              <div style={{ fontSize: 22, fontWeight: 600, fontFamily: C.mono, color: alert ? C.red : C.text }}>{val}</div>
             </div>
           ))}
         </div>
