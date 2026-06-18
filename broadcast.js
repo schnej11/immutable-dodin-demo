@@ -66,8 +66,10 @@ async function anchor(wifKey, rootHashHex) {
 
   // Pick the largest UTXO
   const utxo = utxos.sort((a, b) => b.value - a.value)[0];
-  const changeValue = utxo.value - FEE_SATS;
-  if (changeValue < 0) {
+  const utxoValue = BigInt(utxo.value);
+  const feeSats = BigInt(FEE_SATS);
+  const changeValue = utxoValue - feeSats;
+  if (changeValue < 0n) {
     throw new Error(`UTXO value ${utxo.value} sats is less than fee ${FEE_SATS} sats`);
   }
 
@@ -78,12 +80,12 @@ async function anchor(wifKey, rootHashHex) {
   psbt.addInput({
     hash: utxo.txid,
     index: utxo.vout,
-    witnessUtxo: { script: witnessScript, value: utxo.value },
+    witnessUtxo: { script: witnessScript, value: utxoValue },
   });
 
   // OP_RETURN embedding the 32-byte root hash
   const embed = bitcoin.payments.embed({ data: [Buffer.from(rootHashHex, "hex")] });
-  psbt.addOutput({ script: embed.output, value: 0 });
+  psbt.addOutput({ script: embed.output, value: 0n });
 
   // Change back to same address
   psbt.addOutput({ address, value: changeValue });
